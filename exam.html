@@ -532,12 +532,15 @@
             if (e.target.name && e.target.name.startsWith("question_")) {
               const qIdx = e.target.name.split("_")[1];
               updatePaletteStatus(qIdx);
+              saveDraftAnswers(); // Kích hoạt lưu nháp khi thí sinh chọn đáp án
             }
           });
 
           quizForm.onsubmit = function (e) {
             e.preventDefault();
             clearInterval(timerInterval);
+            // Xóa bản nháp sau khi nộp bài thành công
+            localStorage.removeItem(`exam_draft_${subjectParam}_${examParam || 'default'}`);
             submitQuiz(currentQuestions, subjectName, totalSeconds);
           };
         }
@@ -556,6 +559,7 @@
           if (totalSeconds <= 0) {
             clearInterval(timerInterval);
             alert("Hết giờ làm bài! Hệ thống tự động nộp bài.");
+            localStorage.removeItem(`exam_draft_${subjectParam}_${examParam || 'default'}`);
             submitQuiz(currentQuestions, subjectName, totalSeconds);
           }
         }, 1000);
@@ -577,6 +581,7 @@
             correct: q.correct,
             userChoice: userChoice,
             isCorrect: isCorrect,
+            level: q.level || "Nhận biết", // Truyền cấp độ để phục vụ trang phân tích kết quả
             explanation: q.explanation || "Chưa có lời giải chi tiết cho câu này."
           });
         });

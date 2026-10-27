@@ -80,6 +80,15 @@
       <div id="reviewList"></div>
     </div>
 
+    <!-- [BỔ SUNG MỚI] PHÂN TÍCH NĂNG LỰC THEO MỨC ĐỘ CÂU HỎI -->
+    <div class="card" style="margin-top: 30px;">
+      <h3>🎯 PHÂN TÍCH NĂNG LỰC THEO MỨC ĐỘ CÂU HỎI</h3>
+      <p style="color: #666; margin-bottom: 15px;">Thống kê chi tiết tỷ lệ làm đúng theo từng cấp độ nhận thức:</p>
+      <div id="levelAnalysisContent">
+        <p style="color: #777; font-style: italic;">Đang cập nhật phân tích mức độ...</p>
+      </div>
+    </div>
+
     <!-- [BỔ SUNG MỚI] BIỂU ĐỒ THỐNG KÊ ĐIỂM SỐ & TIẾN BỘ (ANALYTICS DASHBOARD) -->
     <div class="card" style="margin-top: 30px;">
       <h3>📊 BIỂU ĐỒ THỐNG KÊ ĐIỂM SỐ & PHONG ĐỘ LÀM BÀI</h3>
@@ -155,6 +164,18 @@
           // [BỔ SUNG MỚI] Hiển thị phần Lời giải chi tiết
           let expHtml = item.explanation ? `<div class="explanation-box"><strong>💡 Lời giải chi tiết:</strong> ${item.explanation}</div>` : '';
 
+          // [BỔ SUNG MỚI] Khung Thảo luận / Ghi chú cá nhân cho từng câu hỏi
+          let discussionHtml = `
+            <div style="margin-top: 12px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+              <div style="font-size: 0.88rem; font-weight: bold; color: var(--primary-color); margin-bottom: 6px;">💬 Thảo luận / Ghi chú cá nhân câu này:</div>
+              <div id="notes_list_${idx}" style="margin-bottom: 8px;"></div>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="note_input_${idx}" placeholder="Nhập ghi chú hoặc trao đổi thắc mắc..." style="flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85rem;">
+                <button type="button" onclick="saveQuestionNote(${idx})" style="padding: 6px 14px; background: var(--primary-color); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">Gửi / Lưu</button>
+              </div>
+            </div>
+          `;
+
           card.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 8px;">
               Câu ${idx + 1}: ${item.question} 
@@ -162,6 +183,7 @@
             </div>
             <div>${optionsHtml}</div>
             ${expHtml}
+            ${discussionHtml}
           `;
           reviewList.appendChild(card);
         });
@@ -199,9 +221,81 @@
       renderAnalyticsChart(historyData);
     }
 
+    // Logic Phân tích mức độ câu hỏi
+    if (res && res.details) {
+      const levelStats = {
+        "Nhận biết": { total: 0, correct: 0 },
+        "Thông hiểu": { total: 0, correct: 0 },
+        "Vận dụng": { total: 0, correct: 0 },
+        "Vận dụng cao": { total: 0, correct: 0 }
+      };
+
+      res.details.forEach(item => {
+        const lvl = item.level || "Nhận biết";
+        if (!levelStats[lvl]) levelStats[lvl] = { total: 0, correct: 0 };
+        levelStats[lvl].total++;
+        if (item.isCorrect) levelStats[lvl].correct++;
+      });
+
+      let analysisHtml = `<table class="history-table"><thead><tr><th>Mức Độ Nhận Thức</th><th>Số Câu Đúng / Tổng Số</th><th>Tỷ Lệ Chính Xác</th></tr></thead><tbody>`;
+      let hasData = false;
+      for (const [lvl, data] of Object.entries(levelStats)) {
+        if (data.total > 0) {
+          hasData = true;
+          const percent = ((data.correct / data.total) * 100).toFixed(1);
+          analysisHtml += `<tr>
+            <td><strong>${lvl}</strong></td>
+            <td>${data.correct} / ${data.total} câu</td>
+            <td><strong style="color: ${percent >= 70 ? '#2e7d32' : '#d9534f'};">${percent}%</strong></td>
+          </tr>`;
+        }
+      }
+      analysisHtml += `</tbody></table>`;
+      if (!hasData) {
+        analysisHtml = `<p style="text-align:center; padding: 15px; color:#777;">Chưa có dữ liệu phân tích mức độ cho bài thi này.</p>`;
+      }
+      const lvlEl = document.getElementById('levelAnalysisContent');
+      if (lvlEl) lvlEl.innerHTML = analysisHtml;
+
+      // Load ghi chú thảo luận cho tất cả câu hỏi
+      res.details.forEach((_, idx) => loadQuestionNotes(idx));
+    }
+
+    window.saveQuestionNote = function(qIndex) {
+      const inputEl = document.getElementById(`note_input_${qIndex}`);
+      const val = inputEl.value.trim();
+      if (!val) return;
+
+      const notes = JSON.parse(localStorage.getItem('questionNotes')) || {};
+      if (!notes[qIndex]) notes[qIndex] = [];
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      const author = user ? (user.fullname || user.email) : 'Thí sinh';
+
+      notes[qIndex].push({ author: author, text: val, time: new Date().toLocaleTimeString('vi-VN') });
+      localStorage.setItem('questionNotes', JSON.stringify(notes));
+      inputEl.value = '';
+      loadQuestionNotes(qIndex);
+    };
+
+    function loadQuestionNotes(qIndex) {
+      const notes = JSON.parse(localStorage.getItem('questionNotes')) || {};
+      const listEl = document.getElementById(`notes_list_${qIndex}`);
+      if (!listEl) return;
+
+      if (notes[qIndex] && notes[qIndex].length > 0) {
+        listEl.innerHTML = notes[qIndex].map(n => `
+          <div style="font-size:0.83rem; background:rgba(0,51,102,0.06); padding:6px 10px; border-radius:4px; margin-top:4px;">
+            <strong>👤 ${n.author}:</strong> ${n.text} <span style="font-size:0.75rem; color:#777; margin-left:6px;">(${n.time})</span>
+          </div>
+        `).join('');
+      } else {
+        listEl.innerHTML = `<div style="font-size:0.8rem; color:#888; font-style:italic;">Chưa có thảo luận hoặc ghi chú nào.</div>`;
+      }
+    }
+
     function renderAnalyticsChart(data) {
       const ctx = document.getElementById('progressChart').getContext('2d');
-      const recentData = [...data].reverse().slice(-10); // Lấy tối đa 10 lần thi gần nhất
+      const recentData = [...data].reverse().slice(-10);
 
       const labels = recentData.map((item, idx) => `Lần ${idx + 1} (${item.subjectName})`);
       const scores = recentData.map(item => parseFloat(item.score));

@@ -49,6 +49,16 @@
         </div>
 
         <div class="form-group">
+          <label for="addLevel">Mức độ nhận thức (*):</label>
+          <select id="addLevel" required>
+            <option value="Nhận biết">Nhận biết</option>
+            <option value="Thông hiểu">Thông hiểu</option>
+            <option value="Vận dụng">Vận dụng</option>
+            <option value="Vận dụng cao">Vận dụng cao</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label for="questionText">Nội dung câu hỏi (*):</label>
           <textarea id="questionText" rows="3" required placeholder="Nhập nội dung câu hỏi..."></textarea>
         </div>
@@ -82,7 +92,8 @@
           </select>
         </div>
 
-        <button type="submit" class="btn-submit">Thêm Vào Ngân Hàng Đề</button>
+        <button type="submit" class="btn-submit" id="btnSaveQuestion">Thêm Vào Ngân Hàng Đề</button>
+        <button type="button" id="btnCancelEdit" class="btn-submit" style="background:#6c757d; margin-top:10px; display:none;">Hủy Sửa</button>
       </form>
     </div>
 
@@ -94,13 +105,14 @@
             <tr>
               <th>STT</th>
               <th>Môn</th>
+              <th>Mức độ</th>
               <th>Nội dung câu hỏi</th>
               <th>Đáp án đúng</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody id="customQuestionsTableBody">
-            <tr><td colspan="5" style="text-align: center;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>
+            <tr><td colspan="6" style="text-align: center;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>
           </tbody>
         </table>
       </div>
@@ -116,6 +128,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       const form = document.getElementById('addQuestionForm');
       const tableBody = document.getElementById('customQuestionsTableBody');
+      let editingId = null;
 
       function loadCustomQuestions() {
         const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
@@ -127,25 +140,57 @@
             tr.innerHTML = `
               <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">${index + 1}</td>
               <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">${q.subject === 'history' ? 'Lịch Sử' : 'Địa Lý'}</td>
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">${q.level || 'Nhận biết'}</td>
               <td style="padding: 10px; border: 1px solid var(--border-color);">${q.question}</td>
               <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color); font-weight:bold; color:var(--primary-color);">${optLetters[q.correct]}</td>
-              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">
-                <button onclick="deleteCustomQuestion(${q.id})" style="background:#d9534f; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Xóa</button>
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color); white-space:nowrap;">
+                <button onclick="editCustomQuestion(${q.id})" style="background:#0288d1; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-right:5px;">Sửa</button>
+                <button onclick="deleteCustomQuestion(${q.id})" style="background:#d9534f; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">Xóa</button>
               </td>
             `;
             tableBody.appendChild(tr);
           });
         } else {
-          tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 15px;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>`;
         }
       }
+
+      window.editCustomQuestion = function(id) {
+        const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
+        const q = customBank.find(item => item.id === id);
+        if (!q) return;
+
+        document.getElementById('addSubject').value = q.subject;
+        document.getElementById('addLevel').value = q.level || 'Nhận biết';
+        document.getElementById('questionText').value = q.question;
+        document.getElementById('optA').value = q.answers[0] || '';
+        document.getElementById('optB').value = q.answers[1] || '';
+        document.getElementById('optC').value = q.answers[2] || '';
+        document.getElementById('optD').value = q.answers[3] || '';
+        document.getElementById('correctOpt').value = q.correct;
+
+        editingId = id;
+        document.getElementById('formTitleText').textContent = 'CHỈNH SỬA CÂU HỎI';
+        document.getElementById('btnSaveQuestion').textContent = 'Cập Nhật Câu Hỏi';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      document.getElementById('btnCancelEdit').addEventListener('click', function() {
+        editingId = null;
+        form.reset();
+        document.getElementById('formTitleText').textContent = 'THÊM CÂU HỎI MỚI VÀO NGÂN HÀNG ĐỀ THI';
+        document.getElementById('btnSaveQuestion').textContent = 'Thêm Vào Ngân Hàng Đề';
+        this.style.display = 'none';
+      });
 
       form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const newQ = {
-          id: Date.now(),
+        const questionData = {
+          id: editingId ? editingId : Date.now(),
           subject: document.getElementById('addSubject').value,
+          level: document.getElementById('addLevel').value,
           question: document.getElementById('questionText').value.trim(),
           answers: [
             document.getElementById('optA').value.trim(),
@@ -157,7 +202,22 @@
         };
 
         const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
-        customBank.push(newQ);
+        
+        if (editingId) {
+          const index = customBank.findIndex(item => item.id === editingId);
+          if (index !== -1) {
+            customBank[index] = questionData;
+          }
+          alert('Cập nhật câu hỏi thành công!');
+          editingId = null;
+          document.getElementById('formTitleText').textContent = 'THÊM CÂU HỎI MỚI VÀO NGÂN HÀNG ĐỀ THI';
+          document.getElementById('btnSaveQuestion').textContent = 'Thêm Vào Ngân Hàng Đề';
+          document.getElementById('btnCancelEdit').style.display = 'none';
+        } else {
+          customBank.push(questionData);
+          alert('Thêm câu hỏi mới vào ngân hàng đề thành công!');
+        }
+
         localStorage.setItem('customQuestionBank', JSON.stringify(customBank));
 
         alert('Thêm câu hỏi mới vào ngân hàng đề thành công!');
