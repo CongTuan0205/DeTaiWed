@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý & Thêm Câu Hỏi</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- BẢO MẬT CHẶN TRUY CẬP TRANG ADMIN NẾU KHÔNG PHẢI ADMIN -->
+  <script>
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser || !currentUser.isAdmin) {
+      alert("⚠️ Bạn không có quyền truy cập trang quản trị này! Vui lòng đăng nhập bằng tài khoản Admin.");
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div class="top-banner">
+    <!-- Top banner content giữ nguyên -->
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html">Danh sách đề thi</a></li>
+        <li><a href="exam.html">Làm bài thi</a></li>
+        <li><a href="result.html">Kết quả</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="login.html">Tài khoản</a></li>
+        <li><a href="admin.html" class="active">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>THÊM CÂU HỎI MỚI VÀO NGÂN HÀNG ĐỀ THI</h2>
+      <form id="addQuestionForm" style="margin-top: 15px;">
+        <div class="form-group">
+          <label for="addSubject">Chọn Môn Học (*):</label>
+          <select id="addSubject" required>
+            <option value="history">Lịch Sử</option>
+            <option value="geography">Địa Lý</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="questionText">Nội dung câu hỏi (*):</label>
+          <textarea id="questionText" rows="3" required placeholder="Nhập nội dung câu hỏi..."></textarea>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="optA">Đáp án A (*):</label>
+            <input type="text" id="optA" required placeholder="Nội dung đáp án A">
+          </div>
+          <div class="form-group">
+            <label for="optB">Đáp án B (*):</label>
+            <input type="text" id="optB" required placeholder="Nội dung đáp án B">
+          </div>
+          <div class="form-group">
+            <label for="optC">Đáp án C (*):</label>
+            <input type="text" id="optC" required placeholder="Nội dung đáp án C">
+          </div>
+          <div class="form-group">
+            <label for="optD">Đáp án D (*):</label>
+            <input type="text" id="optD" required placeholder="Nội dung đáp án D">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="correctOpt">Đáp án đúng (*):</label>
+          <select id="correctOpt" required>
+            <option value="0">Đáp án A</option>
+            <option value="1">Đáp án B</option>
+            <option value="2">Đáp án C</option>
+            <option value="3">Đáp án D</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-submit">Thêm Vào Ngân Hàng Đề</button>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top: 25px;">
+      <h3>📋 Danh Sách Câu Hỏi Đã Thêm Tùy Chỉnh</h3>
+      <div style="overflow-x: auto; margin-top: 15px;">
+        <table class="history-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Môn</th>
+              <th>Nội dung câu hỏi</th>
+              <th>Đáp án đúng</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="customQuestionsTableBody">
+            <tr><td colspan="5" style="text-align: center;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('addQuestionForm');
+      const tableBody = document.getElementById('customQuestionsTableBody');
+
+      function loadCustomQuestions() {
+        const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
+        if (customBank.length > 0) {
+          tableBody.innerHTML = '';
+          customBank.forEach((q, index) => {
+            const optLetters = ['A', 'B', 'C', 'D'];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">${index + 1}</td>
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">${q.subject === 'history' ? 'Lịch Sử' : 'Địa Lý'}</td>
+              <td style="padding: 10px; border: 1px solid var(--border-color);">${q.question}</td>
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color); font-weight:bold; color:var(--primary-color);">${optLetters[q.correct]}</td>
+              <td style="text-align:center; padding: 10px; border: 1px solid var(--border-color);">
+                <button onclick="deleteCustomQuestion(${q.id})" style="background:#d9534f; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Xóa</button>
+              </td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">Chưa có câu hỏi tùy chỉnh nào.</td></tr>`;
+        }
+      }
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const newQ = {
+          id: Date.now(),
+          subject: document.getElementById('addSubject').value,
+          question: document.getElementById('questionText').value.trim(),
+          answers: [
+            document.getElementById('optA').value.trim(),
+            document.getElementById('optB').value.trim(),
+            document.getElementById('optC').value.trim(),
+            document.getElementById('optD').value.trim()
+          ],
+          correct: parseInt(document.getElementById('correctOpt').value)
+        };
+
+        const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
+        customBank.push(newQ);
+        localStorage.setItem('customQuestionBank', JSON.stringify(customBank));
+
+        alert('Thêm câu hỏi mới vào ngân hàng đề thành công!');
+        this.reset();
+        loadCustomQuestions();
+      });
+
+      window.deleteCustomQuestion = function(id) {
+        if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
+          let customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
+          customBank = customBank.filter(q => q.id !== id);
+          localStorage.setItem('customQuestionBank', JSON.stringify(customBank));
+          loadCustomQuestions();
+        }
+      };
+
+      loadCustomQuestions();
+    });
+  </script>
+</body>
+</html>

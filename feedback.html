@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Góp Ý & Bình Luận - Cổng Thi Trắc Nghiệm</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- BANNER TỔNG -->
+  <div class="top-banner">
+    <div class="top-banner-content">
+      <div class="logo-container">
+        <span class="logo-icon">🏛️</span>
+        <div class="logo-text">CỔNG THI TRẮC NGHIỆM LỊCH SỬ & ĐỊA LÝ</div>
+      </div>
+      <div class="header-tools">
+        <span id="clock"></span>
+        <button class="theme-btn" id="themeToggle">🌓 Giao diện</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THANH ĐIỀU HƯỚNG -->
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html">Danh sách đề thi</a></li>
+        <li><a href="exam.html">Làm bài thi</a></li>
+        <li><a href="result.html">Kết quả</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="login.html">Tài khoản</a></li>
+        <li><a href="admin.html">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- KHUNG GỬI GÓP Ý -->
+    <div class="card feedback-form-card">
+      <h2>💬 GỬI BÌNH LUẬN & GÓP Ý</h2>
+      <p style="margin-bottom: 15px; color: #555;">Ý kiến đóng góp của bạn sẽ giúp hệ thống cải thiện trải nghiệm tốt hơn!</p>
+
+      <form id="feedbackForm">
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="fbName">Họ và Tên (*):</label>
+            <input type="text" id="fbName" placeholder="Nhập họ tên của bạn..." required>
+          </div>
+          <div class="form-group">
+            <label for="fbEmail">Email (Không bắt buộc):</label>
+            <input type="email" id="fbEmail" placeholder="Nhập email nếu cần phản hồi...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fbContent">Nội dung góp ý / bình luận (*):</label>
+          <textarea id="fbContent" rows="4" placeholder="Nhập nội dung góp ý của bạn tại đây..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">🚀 Đăng Bình Luận</button>
+      </form>
+    </div>
+
+    <!-- DANH SÁCH BÌNH LUẬN -->
+    <div class="card">
+      <h3>📋 DANH SÁCH GÓP Ý TỪ NGƯỜI DÙNG</h3>
+      <div id="commentListContainer" style="margin-top: 20px;">
+        <div class="empty-comment">Chưa có góp ý nào. Hãy là người đầu tiên để lại ý kiến!</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const fbForm = document.getElementById("feedbackForm");
+      const commentContainer = document.getElementById("commentListContainer");
+      const fbNameInput = document.getElementById("fbName");
+
+      // Tự động điền tên nếu đã đăng nhập
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (currentUser && currentUser.fullname) {
+        fbNameInput.value = currentUser.fullname;
+      }
+
+      function loadFeedbacks() {
+        const feedbacks = JSON.parse(localStorage.getItem("userFeedbacks")) || [];
+
+        if (feedbacks.length > 0) {
+          commentContainer.innerHTML = "";
+          feedbacks.forEach((item) => {
+            const commentDiv = document.createElement("div");
+            commentDiv.className = "comment-item";
+
+            // Xử lý hiển thị danh sách phản hồi con bên trong
+            let repliesHtml = '';
+            if (item.replies && item.replies.length > 0) {
+              item.replies.forEach(rep => {
+                repliesHtml += `
+                  <div class="reply-item">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #0b6623;">👤 ${escapeHTML(rep.name)} <span style="font-weight: normal; color: #777; font-size: 0.75rem;">(${rep.date})</span></div>
+                    <div style="margin-top: 3px;">${escapeHTML(rep.content)}</div>
+                  </div>
+                `;
+              });
+            }
+
+            commentDiv.innerHTML = `
+              <div class="comment-header">
+                <span class="comment-author">👤 ${escapeHTML(item.name)}</span>
+                <span class="comment-time">⏱️ ${item.date}</span>
+              </div>
+              <div class="comment-text">${escapeHTML(item.content).replace(/\n/g, '<br>')}</div>
+              
+              <!-- Khu vực tương tác (Icon cảm xúc & Phản hồi) -->
+              <div class="comment-actions">
+                <div class="reaction-bar">
+                  <button class="reaction-btn" onclick="reactComment(${item.id}, '👍')">👍 ${item.reactions['👍'] || 0}</button>
+                  <button class="reaction-btn" onclick="reactComment(${item.id}, '❤️')">❤️ ${item.reactions['❤️'] || 0}</button>
+                  <button class="reaction-btn" onclick="reactComment(${item.id}, '😂')">😂 ${item.reactions['😂'] || 0}</button>
+                </div>
+                <button class="reply-toggle-btn" onclick="toggleReplyForm(${item.id})">💬 Phản hồi</button>
+              </div>
+
+              <!-- Danh sách các phản hồi -->
+              <div class="replies-container" id="replies-${item.id}">
+                ${repliesHtml}
+              </div>
+
+              <!-- Form nhập phản hồi ẩn/hiện -->
+              <form class="reply-form" id="reply-form-${item.id}" onsubmit="submitReply(event, ${item.id})">
+                <input type="text" id="reply-input-${item.id}" placeholder="Viết câu trả lời..." required>
+                <button type="submit">Gửi</button>
+              </form>
+            `;
+            commentContainer.appendChild(commentDiv);
+          });
+        } else {
+          commentContainer.innerHTML = '<div class="empty-comment">Chưa có góp ý nào. Hãy là người đầu tiên để lại ý kiến!</div>';
+        }
+      }
+
+      // Đăng bình luận chính mới
+      fbForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const name = fbNameInput.value.trim();
+        const email = document.getElementById("fbEmail").value.trim();
+        const content = document.getElementById("fbContent").value.trim();
+
+        if (!name || !content) {
+          alert("Vui lòng điền đầy đủ Họ tên và Nội dung góp ý!");
+          return;
+        }
+
+        const newFeedback = {
+          id: Date.now(),
+          name: name,
+          email: email,
+          content: content,
+          date: new Date().toLocaleString("vi-VN"),
+          reactions: { '👍': 0, '❤️': 0, '😂': 0 },
+          replies: []
+        };
+
+        const feedbacks = JSON.parse(localStorage.getItem("userFeedbacks")) || [];
+        feedbacks.unshift(newFeedback);
+        localStorage.setItem("userFeedbacks", JSON.stringify(feedbacks));
+
+        document.getElementById("fbContent").value = "";
+        loadFeedbacks();
+      });
+
+      // Hàm thả icon cảm xúc
+      window.reactComment = function(id, emoji) {
+        let feedbacks = JSON.parse(localStorage.getItem("userFeedbacks")) || [];
+        const target = feedbacks.find(item => item.id === id);
+        if (target) {
+          if (!target.reactions) target.reactions = { '👍': 0, '❤️': 0, '😂': 0 };
+          target.reactions[emoji] = (target.reactions[emoji] || 0) + 1;
+          localStorage.setItem("userFeedbacks", JSON.stringify(feedbacks));
+          loadFeedbacks();
+        }
+      };
+
+      // Mở/đóng khung nhập phản hồi
+      window.toggleReplyForm = function(id) {
+        const formEl = document.getElementById(`reply-form-${id}`);
+        if (formEl) {
+          formEl.style.display = formEl.style.display === 'flex' ? 'none' : 'flex';
+        }
+      };
+
+      // Gửi phản hồi (Reply) cho bình luận
+      window.submitReply = function(e, id) {
+        e.preventDefault();
+        const inputEl = document.getElementById(`reply-input-${id}`);
+        const replyText = inputEl.value.trim();
+        if (!replyText) return;
+
+        let feedbacks = JSON.parse(localStorage.getItem("userFeedbacks")) || [];
+        const target = feedbacks.find(item => item.id === id);
+        if (target) {
+          if (!target.replies) target.replies = [];
+          
+          const replierName = currentUser && currentUser.fullname ? currentUser.fullname : "Khách ẩn danh";
+          target.replies.push({
+            name: replierName,
+            content: replyText,
+            date: new Date().toLocaleTimeString("vi-VN") + " " + new Date().toLocaleDateString("vi-VN")
+          });
+
+          localStorage.setItem("userFeedbacks", JSON.stringify(feedbacks));
+          loadFeedbacks();
+        }
+      };
+
+      function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+          tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+          }[tag] || tag)
+        );
+      }
+
+      loadFeedbacks();
+    });
+  </script>
+</body>
+</html>

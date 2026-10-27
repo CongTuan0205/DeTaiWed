@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tài Khoản - Đăng Nhập & Đăng Ký</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="top-banner">
+    <div class="top-banner-content">
+      <div class="logo-container">
+        <span class="logo-icon">🏛️</span>
+        <div class="logo-text">CỔNG THI TRẮC NGHIỆM LỊCH SỬ & ĐỊA LÝ</div>
+      </div>
+      <div class="header-tools">
+        <span id="clock"></span>
+        <button class="theme-btn" id="themeToggle">🌓 Giao diện</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html">Danh sách đề thi</a></li>
+        <li><a href="exam.html">Làm bài thi</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="result.html">Kết quả</a></li>
+        <li><a href="login.html" class="active">Tài khoản</a></li>
+        <li><a href="admin.html">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="auth-container">
+      <!-- Các nút Tabs chuyển đổi -->
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab-btn" id="tabLoginBtn" onclick="switchTab('login')">ĐĂNG NHẬP</button>
+        <button type="button" class="auth-tab-btn active" id="tabRegisterBtn" onclick="switchTab('register')">ĐĂNG KÝ</button>
+      </div>
+
+      <!-- Form Đăng Nhập -->
+      <form id="loginForm" class="auth-form">
+        <div class="form-group-custom">
+          <label>Email hoặc Tên đăng nhập *</label>
+          <input type="text" id="loginEmail" placeholder="Nhập email hoặc tên đăng nhập" required>
+        </div>
+        <div class="form-group-custom">
+          <label>Mật khẩu *</label>
+          <input type="password" id="loginPassword" placeholder="Mật khẩu" required>
+        </div>
+        <button type="submit" class="btn-auth-submit">Đăng nhập</button>
+      </form>
+
+      <!-- Form Đăng Ký (Chuẩn theo mẫu yêu cầu) -->
+      <form id="registerForm" class="auth-form active">
+        <div class="form-group-custom">
+          <label>Họ *</label>
+          <input type="text" id="regLastName" placeholder="Họ" required>
+        </div>
+        <div class="form-group-custom">
+          <label>Tên *</label>
+          <input type="text" id="regFirstName" placeholder="Tên" required>
+        </div>
+        <div class="form-group-custom">
+          <label>Số điện thoại *</label>
+          <input type="tel" id="regPhone" placeholder="Số điện thoại" required>
+        </div>
+        <div class="form-group-custom">
+          <label>Email *</label>
+          <input type="email" id="regEmail" placeholder="Email" required>
+        </div>
+        <div class="form-group-custom">
+          <label>Mật khẩu *</label>
+          <input type="password" id="regPassword" placeholder="Mật khẩu" required>
+        </div>
+        <button type="submit" class="btn-auth-submit">Đăng ký</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Hàm chuyển đổi qua lại giữa tab Đăng nhập và Đăng ký
+    function switchTab(tabName) {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const tabLoginBtn = document.getElementById('tabLoginBtn');
+      const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+
+      if (tabName === 'login') {
+        loginForm.classList.add('active');
+        registerForm.classList.remove('active');
+        tabLoginBtn.classList.add('active');
+        tabRegisterBtn.classList.remove('active');
+      } else {
+        registerForm.classList.add('active');
+        loginForm.classList.remove('active');
+        tabRegisterBtn.classList.add('active');
+        tabLoginBtn.classList.remove('active');
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      // Khởi tạo tài khoản Admin mặc định nếu chưa tồn tại trong localStorage
+      let users = JSON.parse(localStorage.getItem("usersList")) || [];
+      const adminExists = users.some(u => u.email === "admin@CongTuan");
+      if (!adminExists) {
+        users.push({
+          lastname: "Quản Trị",
+          firstname: "Viên",
+          phone: "0123456789",
+          email: "admin@CongTuan",
+          password: "nhtncongtuan",
+          fullname: "Admin CongTuan",
+          isAdmin: true
+        });
+        localStorage.setItem("usersList", JSON.stringify(users));
+      }
+
+      // Xử lý sự kiện Submit Form Đăng Ký
+      const regFormElement = document.getElementById("registerForm");
+      regFormElement.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const lastname = document.getElementById("regLastName").value.trim();
+        const firstname = document.getElementById("regFirstName").value.trim();
+        const phone = document.getElementById("regPhone").value.trim();
+        const email = document.getElementById("regEmail").value.trim();
+        const password = document.getElementById("regPassword").value.trim();
+
+        let userList = JSON.parse(localStorage.getItem("usersList")) || [];
+        
+        // Kiểm tra xem email đã tồn tại chưa
+        if (userList.some(u => u.email === email)) {
+          alert("Email này đã được đăng ký tài khoản!");
+          return;
+        }
+
+        const newUser = {
+          lastname,
+          firstname,
+          phone,
+          email,
+          password,
+          fullname: `${lastname} ${firstname}`,
+          isAdmin: false
+        };
+
+        userList.push(newUser);
+        localStorage.setItem("usersList", JSON.stringify(userList));
+        localStorage.setItem("currentUser", JSON.stringify(newUser));
+
+        alert("Đăng ký thành công!");
+        window.location.href = "index.html";
+      });
+
+      // Xử lý sự kiện Submit Form Đăng Nhập
+      const loginFormElement = document.getElementById("loginForm");
+      loginFormElement.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const loginInput = document.getElementById("loginEmail").value.trim();
+        const passwordInput = document.getElementById("loginPassword").value.trim();
+
+        let userList = JSON.parse(localStorage.getItem("usersList")) || [];
+        
+        const foundUser = userList.find(u => u.email === loginInput && u.password === passwordInput);
+
+        if (foundUser) {
+          localStorage.setItem("currentUser", JSON.stringify(foundUser));
+          alert(`Đăng nhập thành công với tài khoản: ${foundUser.fullname || foundUser.email}`);
+          if (foundUser.email === "admin@CongTuan") {
+            window.location.href = "admin.html";
+          } else {
+            window.location.href = "index.html";
+          }
+        } else {
+          alert("Sai tên đăng nhập hoặc mật khẩu!");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

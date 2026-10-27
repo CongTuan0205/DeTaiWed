@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh Sách Đề Thi - Trắc Nghiệm Online</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="top-banner">
+    <div class="top-banner-content">
+      <div class="logo-container">
+        <span class="logo-icon">🏛️</span>
+        <div class="logo-text">CỔNG THI TRẮC NGHIỆM LỊCH SỬ & ĐỊA LÝ</div>
+      </div>
+      <div class="header-tools">
+        <span id="clock"></span>
+        <button class="theme-btn" id="themeToggle">🌓 Giao diện</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html" class="active">Danh sách đề thi</a></li>
+        <li><a href="exam.html">Làm bài thi</a></li>
+        <li><a href="result.html">Kết quả</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="login.html">Tài khoản</a></li>
+        <li><a href="admin.html">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>Danh Sách Đề Thi & Bộ Lọc Tìm Kiếm</h2>
+
+    <div class="card" style="margin: 20px 0;">
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="searchExamInput">Tìm kiếm theo tên đề thi:</label>
+          <input type="text" id="searchExamInput" placeholder="Nhập từ khóa (Lịch sử, Địa lý, Bắc Ninh, Bắc Giang...)...">
+        </div>
+        <div class="form-group">
+          <label for="subjectFilter">Lọc theo môn học:</label>
+          <select id="subjectFilter">
+            <option value="all">-- Tất cả các môn --</option>
+            <option value="history">Lịch Sử</option>
+            <option value="geography">Địa Lý</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="examListContainer" class="grid-3">
+      
+      <div class="card exam-item" data-subject="history" data-title="Đề Thi Trắc Nghiệm Môn Lịch Sử 12">
+        <h3>📜 Lịch Sử Lớp 12</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Lịch Sử</p>
+        <p><strong>Thời gian:</strong> 50 phút (40 câu)</p>
+        <a href="exam.html?subject=history" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+
+      <div class="card exam-item" data-subject="geography" data-title="Đề Thi Trắc Nghiệm Môn Địa Lý Tự Nhiên">
+        <h3>🗺️ Địa Lý Tự Nhiên & Kinh Tế</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Địa Lý</p>
+        <p><strong>Thời gian:</strong> 50 phút</p>
+        <p><strong>Số câu hỏi:</strong> 40 câu</p>
+        <a href="exam.html?subject=geography" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+
+      <div class="card exam-item" data-subject="geography" data-title="Sở GD&ĐT Bắc Giang (2022 - 2023) - Đề 01">
+        <h3>📍 Sở GD&ĐT Bắc Giang (2022-2023)</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Địa Lý</p>
+        <p><strong>Thời gian:</strong> 50 phút</p>
+        <p><strong>Số câu hỏi:</strong> 40 câu</p>
+        <a href="exam.html?exam=bac_giang_2022_2023_de_01" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+
+      <div class="card exam-item" data-subject="geography" data-title="Sở GD&ĐT Bình Phước (2022 - 2023) - Đề 03">
+        <h3>📍 Sở GD&ĐT Bình Phước (2022-2023) - Đề 03</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Địa Lý</p>
+        <p><strong>Thời gian:</strong> 50 phút</p>
+        <p><strong>Số câu hỏi:</strong> 40 câu</p>
+        <a href="exam.html?exam=binh_phuoc_2022_2023_de_03" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+
+      <!-- Đề thi mới bổ sung từ ảnh -->
+      <div class="card exam-item" data-subject="geography" data-title="Sở GD&ĐT Bắc Ninh (2022 - 2023) - Đề 02">
+        <h3>📍 Sở GD&ĐT Bắc Ninh (2022-2023) - Đề 02</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Địa Lý</p>
+        <p><strong>Thời gian:</strong> 50 phút</p>
+        <p><strong>Số câu hỏi:</strong> 40 câu</p>
+        <a href="exam.html?exam=bac_ninh_2022_2023_de_02" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+<!-- Đề thi Sử mới bổ sung từ ảnh -->
+      <div class="card exam-item" data-subject="history" data-title="Kì thi tốt nghiệp THPT 2018 - Đề thi môn Lịch Sử">
+        <h3>📍 ĐỀ THI CHÍNH THỨC KÌ THI TỐT NGHIỆP THPT 2018</h3>
+        <p style="margin: 10px 0;"><strong>Môn:</strong> Lịch Sử</p>
+        <p><strong>Thời gian:</strong> 50 phút</p>
+        <p><strong>Số câu hỏi:</strong> 40 câu</p>
+        <a href="exam.html?exam=at_school_lich_su_2024_de_01" style="text-decoration: none; margin-top: 15px; display: block;">
+          <button class="btn-submit">Vào Thi Ngay</button>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const searchInput = document.getElementById("searchExamInput");
+      const subjectFilter = document.getElementById("subjectFilter");
+      const examItems = document.querySelectorAll(".exam-item");
+
+      function filterExams() {
+        const keyword = searchInput.value.toLowerCase().trim();
+        const selectedSubject = subjectFilter.value;
+
+        examItems.forEach(item => {
+          const title = item.getAttribute("data-title").toLowerCase();
+          const subject = item.getAttribute("data-subject");
+
+          const matchesSearch = title.includes(keyword);
+          const matchesSubject = (selectedSubject === "all" || subject === selectedSubject);
+
+          if (matchesSearch && matchesSubject) {
+            item.style.display = "block";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      if (searchInput) searchInput.addEventListener("input", filterExams);
+      if (subjectFilter) subjectFilter.addEventListener("change", filterExams);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Làm Bài Thi Trắc Nghiệm</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    #startScreen {
+      text-align: center;
+      padding: 50px 20px;
+      background: var(--card-bg, #fff);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+    #startScreen h3 {
+      color: #007bff;
+      margin-bottom: 15px;
+    }
+    #startScreen p {
+      margin-bottom: 25px;
+      font-size: 1.1rem;
+    }
+    #btnStartExam {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #btnStartExam:hover {
+      background-color: #218838;
+    }
+    #examContentWrapper {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-banner">
+    <div class="top-banner-content">
+      <div class="logo-container">
+        <span class="logo-icon">🏛️</span>
+        <div class="logo-text">CỔNG THI TRẮC NGHIỆM LỊCH SỬ & ĐỊA LÝ</div>
+      </div>
+      <div class="header-tools">
+        <span id="clock"></span>
+        <button class="theme-btn" id="themeToggle">🌓 Giao diện</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html">Danh sách đề thi</a></li>
+        <li><a href="exam.html" class="active">Làm bài thi</a></li>
+        <li><a href="result.html">Kết quả</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="login.html">Tài khoản</a></li>
+        <li><a href="admin.html">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    
+    <div id="startScreen">
+      <h2 id="welcomeSubjectTitle" style="margin-bottom: 10px;">CHUẨN BỊ LÀM BÀI THI</h2>
+      <p>Thời gian làm bài: <strong>50 phút</strong>. Số lượng câu hỏi: <strong>40 câu</strong>.</p>
+      <p>Hệ thống chỉ bắt đầu tính giờ và hiển thị câu hỏi sau khi bạn nhấn nút bên dưới.</p>
+      <button id="btnStartExam">🚀 Bắt Đầu Làm Bài</button>
+    </div>
+
+    <!-- Cấu trúc giao diện 2 cột khi vào bài thi -->
+    <div id="examContentWrapper">
+      <div class="quiz-header">
+        <h2 id="subjectTitle">BÀI THI TRẮC NGHIỆM (40 CÂU)</h2>
+        <div class="timer-box">⏱️ Thời gian còn lại: <span id="timeDisplay">50:00</span></div>
+      </div>
+
+      <div class="exam-layout">
+        <form id="quizForm">
+          <div id="questionsContainer"></div>
+          <button type="submit" class="btn-submit" style="margin-top: 20px; font-size: 1.1rem; padding: 14px;">Nộp Bài Thi</button>
+        </form>
+
+        <!-- Bảng điều hướng câu hỏi (Question Palette) tích hợp trạng thái đánh dấu -->
+        <div class="palette-box">
+          <h4 style="margin-bottom: 10px; text-align: center;">Danh Sách Câu Hỏi</h4>
+          <div style="font-size: 0.8rem; margin-bottom: 10px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+            <span>🟢 Đã chọn</span>
+            <span>🟡 Phân vân</span>
+            <span>⚪ Chưa chọn</span>
+          </div>
+          <div id="questionPalette" class="palette-grid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Quản lý trạng thái đánh dấu phân vân (Flag)
+    let flaggedQuestions = {};
+
+    // Hàm xử lý bật/tắt đánh dấu câu hỏi
+    window.toggleFlagQuestion = function(index) {
+      flaggedQuestions[index] = !flaggedQuestions[index];
+      const flagBtn = document.getElementById(`btn_flag_${index}`);
+      
+      if (flaggedQuestions[index]) {
+        flagBtn.style.background = "#ffc107";
+        flagBtn.style.color = "#000";
+        flagBtn.innerHTML = "🚩 Đã đánh dấu";
+      } else {
+        flagBtn.style.background = "#fff";
+        flagBtn.style.color = "#d39e00";
+        flagBtn.innerHTML = "🚩 Đánh dấu";
+      }
+      updatePaletteStatus(index);
+    };
+
+    // Hàm cập nhật màu sắc trên bảng điều hướng Palette
+    function updatePaletteStatus(qIdx) {
+      const pBtn = document.getElementById(`palette_btn_${qIdx}`);
+      if (!pBtn) return;
+
+      const isChecked = !!document.querySelector(`input[name="question_${qIdx}"]:checked`);
+      const isFlagged = !!flaggedQuestions[qIdx];
+
+      pBtn.classList.remove("answered", "flagged");
+
+      if (isFlagged) {
+        pBtn.classList.add("flagged");
+      } else if (isChecked) {
+        pBtn.classList.add("answered");
+      }
+    }
+    const historyQuestions = [
+      { question: "Sự kiện nào đánh dấu bước ngoặt lớn của phong trào cách mạng Việt Nam (1930 - 1931)?", answers: ["Thành lập Đảng Cộng sản Việt Nam", "Xô viết Nghệ Tĩnh thành lập", "Khởi nghĩa Yên Bái", "Tổng khởi nghĩa tháng Tám"], correct: 0 },
+      { question: "Bản Tuyên ngôn Độc lập do Chủ tịch Hồ Chí Minh đọc vào ngày tháng năm nào?", answers: ["19/08/1945", "02/09/1945", "22/12/1944", "07/05/1954"], correct: 1 },
+      { question: "Chiến dịch lịch sử nào đã kết thúc thắng lợi cuộc kháng chiến chống Mỹ cứu nước năm 1975?", answers: ["Chiến dịch Tây Nguyên", "Chiến dịch Huế - Đà Nẵng", "Chiến dịch Hồ Chí Minh", "Chiến dịch Điện Biên Phủ"], correct: 2 },
+      { question: "Đường lối đổi mới của Đảng Cộng sản Việt Nam được đề ra tại Đại hội lần thứ mấy?", answers: ["Đại hội IV", "Đại hội V", "Đại hội VI", "Đại hội VII"], correct: 2 },
+      { question: "Tổ chức nào lãnh đạo phong trào giải phóng dân tộc Việt Nam trong giai đoạn 1939 - 1945?", answers: ["Hội Phản đế đồng minh", "Mặt trận Việt Minh", "Mặt trận Dân chủ Đông Dương", "Đảng Cộng sản Đông Dương"], correct: 1 },
+      { question: "Cương lĩnh chính trị đầu tiên của Đảng do ai soạn thảo?", answers: ["Hồ Chí Minh", "Trần Phú", "Nguyễn Văn Cừ", "Lê Hồng Phong"], correct: 0 },
+      { question: "Hội nghị lần thứ 8 Ban Chấp hành Trung ương Đảng (5/1941) chủ trương đặt nhiệm vụ nào lên hàng đầu?", answers: ["Giải phóng dân tộc", "Cách mạng ruộng đất", "Chống phong kiến", "Đánh đổ đế quốc thực dân Pháp"], correct: 0 },
+      { question: "Hình thức đấu tranh chủ yếu trong phong trào 1930 - 1931 là gì?", answers: ["Đấu tranh vũ trang", "Bãi công, biểu tình kết hợp bạo lực", "Biểu tình hòa bình", "Đấu tranh nghị trường"], correct: 1 },
+      { question: "Ý nghĩa quan trọng nhất của Cách mạng tháng Tám năm 1945 là gì?", answers: ["Lập ra nước Việt Nam Dân chủ Cộng hòa", "Phá ách xiềng xích nô lệ của Pháp - Nhật", "Đưa Đảng ra hoạt động công khai", "Mở ra kỷ nguyên độc lập, tự do cho dân tộc"], correct: 3 },
+      { question: "Thực dân Pháp chính thức nổ súng xâm lược Việt Nam vào năm nào?", answers: ["1858", "1862", "1873", "1884"], correct: 0 },
+      { question: "Hiệp định Giơ-ne-vơ về Đông Dương được ký kết vào năm nào?", answers: ["1945", "1954", "1973", "1975"], correct: 1 },
+      { question: "Chiến thắng nào được ví như 'Điện Biên Phủ trên không' cuối năm 1972?", answers: ["Trận Ấp Bắc", "Cuộc tổng tiến công Tết Mậu Thân", "Đập tan tập đoàn cứ điểm Khe Sanh", "12 ngày đêm bắn rơi máy bay B-52 trên bầu trời Hà Nội"], correct: 3 },
+      { question: "Tỉnh nào giành chính quyền sớm nhất trong Tổng khởi nghĩa tháng Tám năm 1945?", answers: ["Hà Nội, Huế, Sài Gòn", "Hải Dương, Bắc Giang, Hà Tĩnh, Quảng Nam", "Cao Bằng, Bắc Kạn, Lạng Sơn", "Thái Nguyên, Tuyên Quang"], correct: 1 },
+      { question: "Đại hội đại biểu toàn quốc lần thứ II của Đảng (2/1951) quyết định đổi tên Đảng thành gì?", answers: ["Đảng Lao động Việt Nam", "Đảng Cộng sản Việt Nam", "Đảng Nhân dân Cách mạng", "Đảng Cộng sản Đông Dương"], correct: 0 },
+      { question: "Nền tảng tư tưởng và kim chỉ nam cho hành động của Đảng ta được khẳng định từ khi nào?", answers: ["Chủ nghĩa Mác - Lênin", "Tư tưởng Hồ Chí Minh", "Chủ nghĩa Mác - Lênin và tư tưởng Hồ Chí Minh", "Đường lối cách mạng tư sản dân quyền"], correct: 2 },
+      { question: "Phong trào Cần vương chấm dứt vào thời gian nào?", answers: ["Cuối thế kỷ XIX", "Đầu thế kỷ XX", "Năm 1911", "Năm 1930"], correct: 0 },
+      { question: "Người thầy giáo trẻ Nguyễn Tất Thành đã dạy học ở ngôi trường nào trước khi ra đi tìm đường cứu nước?", answers: ["Trường Quốc học Huế", "Trường Dục Thanh (Phan Thiết)", "Trường Tiểu học Pháp - bản xứ Nam Định", "Trường Thăng Long (Hà Nội)"], correct: 1 },
+      { question: "Tác phẩm nào của Nguyễn Ái Quốc vạch tội ác của thực dân Pháp và thức tỉnh tinh thần yêu nước?", answers: ["Đường Kách mệnh", "Bản án chế độ thực dân Pháp", "Tuyên ngôn Độc lập", "Việc gốc"], correct: 1 },
+      { question: "Tổ chức cách mạng đầu tiên do Nguyễn Ái Quốc thành lập năm 1925 là gì?", answers: ["Hội Việt Nam Cách mạng Thanh niên", "Tâm Tâm xã", "Việt Nam Quốc dân đảng", "Đảng Cộng sản Việt Nam"], correct: 0 },
+      { question: "Sự kiện nào đánh dấu Việt Nam chính thức gia nhập tổ chức Liên hợp quốc (UN)?", answers: ["1976", "1977", "1995", "2007"], correct: 1 },
+      { question: "Chiến dịch Biên giới thu - đông năm 1950 mở ra nhằm mục đích chủ yếu gì?", answers: ["Giải phóng hoàn toàn miền Bắc", "Khai thông biên giới Việt - Trung", "Tiêu diêu một bộ phận sinh lực địch", "Bảo vệ cơ quan đầu não kháng chiến"], correct: 1 },
+      { question: "Kế hoạch Nava do thực dân Pháp - Mỹ đề ra nhằm mục đích gì trong 18 tháng?", answers: ["Chuyển bại thành thắng ở Đông Dương", "Tiêu diệt quân chủ lực ta ở Tây Bắc", "Cô lập căn cứ địa Việt Bắc", "Giành lại thế chủ động chiến lược trên chiến trường chính"], correct: 3 },
+      { question: "Thắng lợi quân sự nào mở đầu cho cao trào kháng chiến chống Mỹ cứu nước từ năm 1959 - 1960?", answers: ["Phong trào Đồng khởi ở Bến Tre", "Trận Ấp Bắc", "Trận Bình Giã", "Chiến thắng Vạn Tường"], correct: 0 },
+      { question: "Hội nghị Giơ-ne-vơ quy định lấy vĩ tuyến nào làm giới hạn quân sự tạm thời ở Việt Nam?", answers: ["Vĩ tuyến 16", "Vĩ tuyến 17", "Vĩ tuyến 18", "Vĩ tuyến 20"], correct: 1 },
+      { question: "Hiệp định Pa-ri về chấm dứt chiến tranh, lập lại hòa bình ở Việt Nam ký kết năm nào?", answers: ["1972", "1973", "1975", "1954"], correct: 1 },
+      { question: "Chiến dịch mở màn cho cuộc Tổng tiến công và nổi dậy mùa Xuân 1975 là chiến dịch nào?", answers: ["Chiến dịch Tây Nguyên", "Chiến dịch Huế - Đà Nẵng", "Chiến dịch Hồ Chí Minh", "Chiến dịch Đường 9 - Nam Lào"], correct: 0 },
+      { question: "Đại hội lần thứ VI của Đảng (1986) đánh dấu sự kiện trọng đại nào?", answers: ["Bắt đầu công cuộc Đổi mới đất nước", "Hoàn thành thống nhất đất nước về mặt nhà nước", "Đưa nước ta bước vào thời kỳ công nghiệp hóa, hiện đại hóa", "Chính thức gia nhập ASEAN"], correct: 0 },
+      { question: "Tên nước Việt Nam Dân chủ Cộng hòa chính thức đổi thành Cộng hòa Xã hội Chủ nghĩa Việt Nam vào năm nào?", answers: ["1975", "1976", "1980", "1986"], correct: 1 },
+      { question: "Ý nghĩa quốc tế to lớn của Cách mạng tháng Tám năm 1945 là gì?", answers: ["Góp phần cổ vũ phong trào giải phóng dân tộc trên thế giới", "Làm tan rã hệ thống thuộc địa của chủ nghĩa đế quốc", "Mở ra thời kỳ sụp đổ của chủ nghĩa thực dân cũ", "Cả 3 ý trên đều đúng"], correct: 3 },
+      { question: "Tổ chức ASEAN được thành lập vào năm nào và Việt Nam gia nhập năm nào?", answers: ["1967 và 1995", "1967 và 1997", "1976 và 1995", "1995 và 1997"], correct: 0 },
+      { question: "Sự kiện nào đánh dấu sự chấm dứt hoàn toàn cuộc chiến tranh xâm lược của Mỹ ở Việt Nam?", answers: ["Ký hiệp định Pa-ri 1973", "Giải phóng Sài Gòn 30/04/1975", "Cuộc tổng tiến công Tết Mậu Thân 1968", "Đánh bại chiến lược Chiến tranh cục bộ"], correct: 1 },
+      { question: "Lực lượng chủ lực tham gia phong trào Xô viết Nghệ Tĩnh là lực lượng nào?", answers: ["Công nhân và nông dân", "Trí thức và tiểu tư sản", "Tư sản dân tộc và địa chủ vừa", "Nông dân và binh lính"], correct: 0 },
+      { question: "Đảng Cộng sản Việt Nam ra đời là sản phẩm của sự kết hợp giữa các yếu tố nào?", answers: ["Chủ nghĩa Mác-Lênin với phong trào công nhân", "Chủ nghĩa Mác-Lênin, phong trào công nhân và phong trào yêu nước", "Phong trào công nhân và phong trào yêu nước", "Tư tưởng Hồ Chí Minh với phong trào công nhân"], correct: 1 },
+      { question: "Đội Việt Nam Tuyên truyền Giải phóng quân được thành lập vào ngày tháng năm nào?", answers: ["22/12/1944", "19/08/1945", "03/02/1930", "02/09/1945"], correct: 0 },
+      { question: "Người chỉ huy chiến dịch Điện Biên Phủ năm 1954 là ai?", answers: ["Đại tướng Võ Nguyên Giáp", "Đại tướng Văn Tiến Dũng", "Chủ tịch Hồ Chí Minh", "Đại tướng Nguyễn Chí Thanh"], correct: 0 },
+      { question: "Nhiệm vụ cơ bản của cách mạng Việt Nam trong giai đoạn 1954 - 1975 ở miền Bắc là gì?", answers: ["Xây dựng chủ nghĩa xã hội và làm hậu thuẫn cho miền Nam", "Tiến hành cách mạng dân tộc dân chủ nhân dân", "Trực tiếp chiến đấu chống đế quốc Mỹ", "Thực hiện cải cách ruộng đất triệt để"], correct: 0 },
+      { question: "Nhiệm vụ cơ bản của cách mạng Việt Nam trong giai đoạn 1954 - 1975 ở miền Nam là gì?", answers: ["Xây dựng chế độ xã hội chủ nghĩa", "Tiến hành cách mạng dân tộc dân chủ nhân dân, đánh đổ đế quốc Mỹ và tay sai", "Phát triển kinh tế thị trường định hướng XHCN", "Hội nhập kinh tế quốc tế"], correct: 1 },
+      { question: "Phong trào 'Ba sẵn sàng' ra đời trong thanh niên miền Bắc gắn liền với cuộc chiến chống lại sự kiện nào?", answers: ["Chiến tranh phá hoại bằng không quân, hải quân của Mỹ", "Chiến tranh cục bộ của Mỹ ở miền Nam", "Chiến dịch Biên giới", "Kháng chiến chống Pháp"], correct: 0 },
+      { question: "Phong trào 'Năm tấn' là phong trào thi đua sản xuất nông nghiệp tiêu biểu ở tỉnh nào?", answers: ["Thái Bình", "Nam Định", "Hải Dương", "Hà Nam"], correct: 0 },
+      { question: "Thắng lợi nào của quân dân ta buộc Mỹ phải tuyên bố ngừng hẳn các hoạt động chiến tranh chống miền Bắc?", answers: ["Cuộc tổng tiến công và nổi dậy Tết Mậu Thân 1968", "Trận Điện Biên Phủ trên không 1972", "Chiến dịch Khe Sanh", "Hiệp định Pa-ri 1973"], correct: 1 }
+    ];
+
+    const geographyQuestions = [
+      { question: "Việt Nam nằm ở vị trí nào của khu vực Đông Nam Á?", answers: ["Rìa phía Đông bán đảo Đông Dương", "Trung tâm Đông Nam Á", "Phía Nam bán đảo Trung Ấn", "Rìa phía Tây đại dương"], correct: 0 },
+      { question: "Gió mùa mùa đông ở nước ta có hướng chính là gì?", answers: ["Tây Nam", "Đông Nam", "Đông Bắc", "Tây Bắc"], correct: 2 },
+      { question: "Đỉnh núi cao nhất Việt Nam và toàn Đông Dương là đỉnh nào?", answers: ["Pha Luông", "Tây Côn Lĩnh", "Mẫu Sơn", "Phan-xi-păng"], correct: 3 },
+      { question: "Loại đất chiếm diện tích lớn nhất ở đồi núi nước ta là gì?", answers: ["Đất feralit", "Đất mùn núi cao", "Đất phù sa", "Đất xám bạc màu"], correct: 0 },
+      { question: "Vùng nào sau đây ở nước ta chịu ảnh hưởng mạnh nhất của bão?", answers: ["Trung du miền núi Bắc Bộ", "Đông Nam Bộ", "Bắc Trung Bộ và Duyên hải miền Trung", "Đồng bằng sông Cửu Long"], correct: 2 },
+      { question: "Hệ thống sông nào có diện tích lưu vực lớn nhất nước ta?", answers: ["Sông Hồng", "Sông Mê Kông (Cửu Long)", "Sông Đồng Nai", "Sông Đà"], correct: 1 },
+      { question: "Căn cứ vào Atlat Địa lí Việt Nam, cho biết trung tâm kinh tế nào có quy mô lớn nhất nước ta?", answers: ["Hải Phòng", "Hà Nội", "Đà Nẵng", "Thành phố Hồ Chí Minh"], correct: 3 },
+      { question: "Ngành công nghiệp nào được coi là ngành công nghiệp trọng điểm của nước ta hiện nay?", answers: ["Khai thác than", "Chế biến lương thực thực phẩm", "Luyện kim đen", "Sản xuất vật liệu xây dựng"], correct: 1 },
+      { question: "Đặc điểm nào sau đây không phải của thiên nhiên nước ta?", answers: ["Nhiệt đới ẩm gió mùa", "Có sự phân hóa đa dạng", "Chịu ảnh hưởng sâu sắc của biển", "Nằm hoàn toàn trong khu vực xích đạo"], correct: 3 },
+      { question: "Khí hậu nước ta mang tính chất nhiệt đới gió mùa là do:", answers: ["Vị trí nằm trong vùng nội chí tuyến Bắc bán cầu và chịu ảnh hưởng của các khối khí hoạt động theo mùa", "Địa hình có nhiều đồi núi thấp", "Lãnh thổ trải dài trên nhiều vĩ độ", "Giáp biển Đông rộng lớn"], correct: 0 },
+      { question: "Dải đồng bằng ven biển miền Trung nước ta có đặc điểm chủ yếu là gì?", answers: ["Rộng lớn, bằng phẳng do phù sa bồi đắp", "Hẹp ngang, bị các dãy núi đâm ra sát biển chia cắt thành nhiều đồng bằng nhỏ", "Nhiều ô trũng ngập nước", "Đất phèn, đất mặn chiếm diện tích lớn"], correct: 1 },
+      { question: "Loại khoáng sản có trữ lượng lớn nhất và giá trị kinh tế cao nhất ở thềm lục địa nước ta là gì?", answers: ["Sắt", "Bô-xít", "Dầu mỏ và khí đốt", "Than đá"], correct: 2 },
+      { question: "Vấn đề có ý nghĩa hàng đầu trong việc phát triển nông nghiệp ở Đồng bằng sông Cửu Long là gì?", answers: ["Cải tạo đất phèn, đất mặn và cung cấp nước ngọt vào mùa khô", "Đẩy mạnh thâm canh tăng vụ", "Chuyển đổi cơ cấu cây trồng, vật nuôi", "Giải quyết việc làm cho người lao động"], correct: 0 },
+      { question: "Trung tâm công nghiệp nào sau đây lớn nhất vùng Bắc Trung Bộ?", answers: ["Thanh Hóa", "Vinh", "Hà Tĩnh", "Đông Hà"], correct: 1 },
+      { question: "Khu vực kinh tế nào ở nước ta hiện nay đóng góp tỷ trọng GDP lớn nhất?", answers: ["Khu vực nhà nước", "Khu vực ngoài nhà nước", "Khu vực có vốn đầu tư nước ngoài (FDI)", "Khu vực nông, lâm, ngư nghiệp"], correct: 1 },
+      { question: "Cây công nghiệp lâu năm quan trọng số một ở nước ta hiện nay là:", answers: ["Cà phê", "Chè", "Cao su", "Hồ tiêu"], correct: 0 },
+      { question: "Vùng nào sau đây ở nước ta dẫn đầu cả nước về nghề nuôi trồng thủy sản nước lợ, mặn?", answers: ["Đồng bằng sông Hồng", "Bắc Trung Bộ", "Duyên hải Nam Trung Bộ", "Đồng bằng sông Cửu Long"], correct: 3 },
+      { question: "Ý nghĩa chủ yếu của việc phát triển giao thông vận tải biển ở nước ta là:", answers: ["Thúc đẩy phát triển kinh tế các đảo và hội nhập kinh tế quốc tế", "Giảm tải cho giao thông đường bộ", "Phát triển du lịch sinh thái biển", "Khai thác tài nguyên khoáng sản thềm lục địa"], correct: 0 },
+      { question: "Đặc điểm dân số nước ta hiện nay là:", answers: ["Quy mô dân số lớn, cơ cấu dân số trẻ nhưng đang già hóa", "Tỷ lệ gia tăng tự nhiên rất cao", "Phân bố dân cư đồng đều giữa các vùng", "Tỷ lệ dân thành thị chiếm đa số"], correct: 0 },
+      { question: "Thế mạnh lớn nhất để phát triển công nghiệp điện lực ở vùng Tây Nguyên là gì?", answers: ["Trữ năng thủy điện lớn trên các hệ thống sông", "Nguồn than nâu dồi dào", "Năng lượng gió và năng lượng mặt trời phát triển mạnh", "Có các nhà máy nhiệt điện công suất lớn"], correct: 0 },
+      { question: "Căn cứ vào Atlat Địa lí Việt Nam, trung tâm kinh tế nào sau đây thuộc vùng Đồng bằng sông Hồng?", answers: ["Hải Phòng", "Thái Nguyên", "Việt Trì", "Nam Định"], correct: 0 },
+      { question: "Tỉnh nào sau đây ở nước ta vừa giáp biển vừa giáp Trung Quốc?", answers: ["Quảng Ninh", "Hải Phòng", "Lạng Sơn", "Hà Giang"], correct: 0 },
+      { question: "Nguyên nhân chủ yếu làm cho sinh vật nước ta phong phú và giàu có là do:", answers: ["Môi trường khí hậu nhiệt đới ẩm gió mùa và vị trí ngã tư đường giao lưu sinh vật", "Địa hình đồi núi chiếm ưu thế", "Đất đai màu mỡ", "Mạng lưới sông ngòi dày đặc"], correct: 0 },
+      { question: "Mùa bão ở nước ta có đặc điểm chung là:", answers: ["Bắt đầu từ miền Nam ra miền Bắc", "Bắt đầu từ miền Bắc và di chuyển dần vào miền Nam", "Chỉ tập trung vào tháng 9 hàng năm", "Diễn ra đồng loạt trên cả nước"], correct: 1 },
+      { question: "Sự phân hóa thiên nhiên theo chiều Bắc - Nam ở nước ta chủ yếu do:", answers: ["Sự thay đổi của chế độ nhiệt và góc nhập xạ theo chiều vĩ độ", "Sự tác động của các dãy núi hướng vòng cung", "Ảnh hưởng của gió mùa Đông Bắc suy yếu dần khi vào Nam", "Cả A và C đúng"], correct: 3 },
+      { question: "Đặc điểm nổi bật của địa hình đồi núi nước ta là:", answers: ["Đồi núi thấp chiếm phần lớn diện tích", "Địa hình cao nguyên bazan chiếm đa số", "Núi cao tập trung chủ yếu ở miền Nam", "Bề mặt phẳng phiu, ít bị cắt xẻ"], correct: 0 },
+      { question: "Vùng kinh tế trọng điểm phía Nam bao gồm bao nhiêu tỉnh/thành phố (tính đến nay)?", answers: ["6 tỉnh/thành phố", "7 tỉnh/thành phố", "8 tỉnh/thành phố", "5 tỉnh/thành phố"], correct: 2 },
+      { question: "Cơ cấu giá trị sản xuất công nghiệp theo nhóm ngành của nước ta đang chuyển dịch theo hướng:", answers: ["Tăng tỷ trọng công nghiệp khai thác, giảm công nghiệp chế biến", "Tăng tỷ trọng công nghiệp chế biến, giảm công nghiệp khai thác", "Tỷ trọng các nhóm ngành giữ nguyên không đổi", "Tập trung phát triển mạnh công nghiệp luyện kim"], correct: 1 },
+      { question: "Tác động lớn nhất của quá trình đô thị hóa ở nước ta tới kinh tế là:", answers: ["Làm chuyển dịch cơ cấu kinh tế và cơ cấu lao động", "Tạo ra nhiều việc làm nhưng gây ô nhiễm môi trường", "Gây áp lực lớn về nhà ở cho các thành phố lớn", "Tăng tỷ lệ thất nghiệp ở nông thôn"], correct: 0 },
+      { question: "Vấn đề bảo vệ môi trường biển đảo nước ta có ý nghĩa cấp bách nhằm:", answers: ["Phát triển bền vững nguồn lợi hải sản và du lịch biển", "Thu hút nguồn vốn đầu tư nước ngoài", "Đảm bảo an ninh quốc phòng toàn diện", "Giảm thiểu hiện tượng xói lở bờ biển"], correct: 0 },
+      { question: "Nguồn năng lượng tái tạo nào đang có tiềm năng rất lớn để phát triển ở khu vực Nam Trung Bộ?", answers: ["Điện gió và điện mặt trời", "Thủy điện nhỏ", "Điện sinh khối", "Địa nhiệt"], correct: 0 },
+      { question: "Ngành giao thông vận tải đóng vai trò vận chuyển hàng hóa quốc tế chủ yếu ở nước ta là:", answers: ["Đường biển và đường hàng không", "Đường sắt và đường ô tô", "Đường sông và đường ống", "Đường ô tô và đường sông"], correct: 0 },
+      { question: "Vùng nào sau đây có diện tích trồng cây cao su lớn nhất nước ta?", answers: ["Đông Nam Bộ", "Tây Nguyên", "Trung du và miền núi Bắc Bộ", "Bắc Trung Bộ"], correct: 0 },
+      { question: "Nhân tố chủ yếu quyết định tính chất nhiệt đới của nền nông nghiệp nước ta là:", answers: ["Chế độ nhiệt lượng và ánh sáng dồi dào", "Nguồn nước tưới phong phú từ hệ thống sông ngòi", "Đất đai phì nhiêu", "Truyền thống sản xuất lâu đời của nhân dân"], correct: 0 },
+      { question: "Đặc điểm phân bố dân cư nước ta chưa hợp lý đã gây khó khăn lớn nhất cho việc:", answers: ["Sử dụng hợp lý nguồn lao động và khai thác tài nguyên", "Phát triển giáo dục và y tế công cộng", "Đảm bảo trật tự an toàn xã hội", "Xây dựng cơ sở hạ tầng giao thông"], correct: 0 },
+      { question: "Khu vực chịu hậu quả nặng nề nhất của hiện tượng hạn mặn hàng năm ở nước ta là:", answers: ["Đồng bằng sông Cửu Long", "Đồng bằng sông Hồng", "Duyên hải Nam Trung Bộ", "Vùng núi Tây Bắc"], correct: 0 },
+      { question: "Cảng biển nào có quy mô lớn nhất ở khu vực phía Nam nước ta?", answers: ["Cảng Sài Gòn (TP. Hồ Chí Minh)", "Cảng Vũng Tàu", "Cảng Cần Thơ", "Cảng Quy Nhơn"], correct: 0 },
+      { question: "Mục đích chủ yếu của việc chuyển dịch cơ cấu kinh tế trong khu vực nông nghiệp ở nước ta là:", answers: ["Nhằm gắn sản xuất với thị trường trong và ngoài nước, nâng cao hiệu quả kinh tế", "Giải quyết triệt để tình trạng thiếu việc làm ở nông thôn", "Tăng nhanh tỷ trọng ngành trồng trọt truyền thống", "Giảm bớt sự phụ thuộc vào thời tiết"], correct: 0 },
+      { question: "Loại hình giao thông vận tải mới xuất hiện và phát triển mạnh ở nước ta trong những năm gần đây phục vụ du lịch là:", answers: ["Hàng không giá rẻ và tàu cao tốc ra đảo", "Đường sắt cao tốc Bắc - Nam", "Đường ống dẫn khí đốt", "Đường xe điện ngầm đô thị"], correct: 0 },
+      { question: "Biện pháp quan trọng nhất để phòng chống khô hạn và cháy rừng ở Tây Nguyên trong mùa khô là:", answers: ["Xây dựng các công trình thủy lợi, hồ chứa nước và quản lý bảo vệ rừng chặt chẽ", "Khai thác triệt để nguồn nước ngầm", "Trồng các loại cây chịu hạn ngắn ngày", "Chuyển đổi hoàn toàn đất rừng thành đất canh tác"], correct: 0 }
+    ];
+
+    const fixedExams = {
+      "bac_giang_2022_2023_de_01": {
+        subjectName: "Địa Lý",
+        title: "Sở GD&ĐT Bắc Giang (2022-2023) - Đề 01",
+        questions: [
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Khí hậu, cho biết trong các trạm khí tượng sau đây, trạm nào có lượng mưa lớn nhất vào tháng X?", answers: ["Đà Lạt.", "Lạng Sơn.", "Đồng Hới.", "Nha Trang."], correct: 2 },
+          { question: "Cho biểu đồ: DÂN SỐ CỦA VIỆT NAM VÀ THÁI LAN NĂM 2010 VÀ 2020. Theo biểu đồ, nhận xét nào sau đây đúng về sự thay đổi dân số năm 2020 so với năm 2010 của Việt Nam và Thái Lan?", answers: ["Thái Lan tăng nhiều hơn Việt Nam.", "Việt Nam giảm và Thái Lan tăng.", "Việt Nam tăng và Thái Lan giảm.", "Việt Nam tăng nhanh hơn Thái Lan."], correct: 3 },
+          { question: "Cho bảng số liệu: TỔNG SỐ DÂN, SỐ DÂN THÀNH THỊ CỦA THÁI LAN VÀ IN-ĐÔ-NÊ-XI-A, NĂM 2000 VÀ NĂM 2020. Theo bảng số liệu, cho biết nhận xét nào sau đây đúng về tỉ lệ dân thành thị của Thái Lan và In-đô-nê-xi-a?", answers: ["Thái Lan cao hơn và tăng chậm hơn.", "In-đô-nê-xi-a cao hơn và tăng chậm hơn.", "Thái Lan thấp hơn và xu hướng giảm.", "In-đô-nê-xi-a thấp hơn và tăng nhanh hơn."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Bắc Trung Bộ, cho biết đường số 7 chạy qua tỉnh nào sau đây?", answers: ["Quảng Trị.", "Thanh Hóa.", "Quảng Bình.", "Nghệ An."], correct: 3 },
+          { question: "Mạng lưới đường sắt nước ta", answers: ["đã gắn kết các vùng núi với nhau.", "phân bố đồng đều giữa các vùng.", "chạy qua nhiều trung tâm kinh tế.", "hiện nay đã đạt trình độ rất hiện đại."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Du lịch, cho biết trung tâm du lịch nào sau đây có du lịch biển?", answers: ["Cần Thơ.", "Nha Trang.", "Hà Nội.", "Đà Lạt."], correct: 1 },
+          { question: "Công nghiệp xay xát của nước ta phân bố tập trung ở", answers: ["vùng đồng bằng.", "vùng cao nguyên.", "vùng núi cao.", "ven vịnh biển."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Kinh tế chung, cho biết trung tâm kinh tế nào sau đây thuộc tỉnh Bình Định?", answers: ["Quy Nhơn.", "Vũng Tàu.", "Biên Hòa.", "Nha Trang."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Duyên hải Nam Trung Bộ, Vùng Tây Nguyên, cho biết cảng biển Cam Ranh thuộc tỉnh nào sau đây ở Duyên hải Nam Trung Bộ?", answers: ["Khánh Hoà.", "Phú Yên.", "Bình Định.", "Quảng Nam."], correct: 0 },
+          { question: "Vấn đề có ý nghĩa hàng đầu để tăng hệ số sử dụng đất ở vùng Đông Nam Bộ là", answers: ["thực hiện thay đổi cơ cấu mùa vụ.", "xây dựng các công trình thủy lợi.", "trồng các giống cây chịu hạn tốt.", "tiến hành cơ giới hóa nông nghiệp."], correct: 1 },
+          { question: "Các huyện đảo của nước ta", answers: ["phát triển mạnh việc trồng lúa gạo.", "là các trung tâm du lịch cấp vùng.", "phần lớn có hoạt động nghề biển.", "đều là trung tâm hành chính tỉnh."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Đông Nam Bộ, Vùng Đồng bằng sông Cửu Long, cho biết tỉnh nào sau đây có nhà máy thủy điện Cần Đơn?", answers: ["Bình Dương.", "Tây Ninh.", "Bình Phước.", "Đồng Nai."], correct: 2 },
+          { question: "Phát biểu nào sau đây không đúng với đặc điểm vị trí địa lí và phạm vi lãnh thổ nước ta?", answers: ["Nằm ở trung tâm bán đảo Đông Dương.", "Biên giới trên đất liền dài hơn đường bờ biển.", "Có nhiều đảo ven bờ và các quần đảo.", "Lãnh thổ gồm vùng đất, vùng biển, vùng trời."], correct: 0 },
+          { question: "Các trung tâm công nghiệp nước ta hiện nay", answers: ["có cơ cấu ngành hiện đại.", "tập trung ở miền núi.", "phân bố không đồng đều.", "chủ yếu có quy mô lớn."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Công nghiệp chung, cho biết ngành công nghiệp nào sau đây có ở trung tâm Huế?", answers: ["Đóng tàu.", "Luyện kim.", "Hóa chất.", "Dệt may."], correct: 3 },
+          { question: "Mạng lưới đô thị nước ta hiện nay", answers: ["phát triển mạnh ở vùng đồi núi.", "có rất nhiều thành phố cực lớn.", "sắp xếp theo các cấp khác nhau.", "phân bố đều khắp ở trong nước."], correct: 2 },
+          { question: "Chống bão ở nước ta phải luôn kết hợp với chống", answers: ["sương muối.", "hạn hán.", "động đất.", "ngập lụt."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Trung du và miền núi Bắc Bộ, Vùng đồng bằng sông Hồng, cho biết khai thác bôxit có ở tỉnh nào sau đây thuộc Trung du và miền núi Bắc Bộ?", answers: ["Cao Bằng.", "Lai Châu.", "Lào Cai.", "Hà Giang."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các miền tự nhiên, cho biết dãy núi nào sau đây không thuộc miền Tây Bắc và Bắc Trung Bộ?", answers: ["Pu Đen Đinh.", "Hoàng Liên Sơn.", "Pu Sam Sao.", "Con Voi."], correct: 3 },
+          { question: "Việc chuyển dịch cơ cấu thành phần kinh tế nước ta hiện nay", answers: ["đang diễn ra với tốc độ rất nhanh chóng.", "theo hướng tăng tỉ trọng kinh tế tư nhân.", "theo hướng mở rộng các khu công nghiệp.", "làm giảm nhanh tỉ trọng của nông nghiệp."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Hành chính, cho biết tỉnh nào sau đây cùng giáp với Lào và Campuchia?", answers: ["Kon Tum.", "Đắk Lắk.", "Gia Lai.", "Quảng Nam."], correct: 0 },
+          { question: "Điều kiện thuận lợi đối với nuôi trồng thủy sản nước ngọt ở nước ta là", answers: ["có ngư trường lớn, biển nhiều sinh vật.", "khí hậu và thời tiết ổn định, ít thiên tai.", "có nhiều sông suối, kênh rạch, ao hồ.", "có nhiều cửa sông, bãi triều, đầm phá."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các hệ thống sông, cho biết sông nào sau đây thuộc hệ thống sông Cả?", answers: ["Sông Hiếu.", "Sông Cầu.", "Sông Thương.", "Sông Đà."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các ngành công nghiệp trọng điểm, cho biết trung tâm công nghiệp chế biến lương thực, thực phẩm nào có quy mô lớn nhất trong các trung tâm sau đây?", answers: ["Tây Ninh.", "TP. Hồ Chí Minh.", "Thủ Dầu Một.", "Biên Hòa."], correct: 1 },
+          { question: "Chăn nuôi gia súc ăn cỏ ở nước ta hiện nay", answers: ["chủ yếu dựa vào đồng cỏ tự nhiên.", "chủ yếu lấy sức kéo cho nông nghiệp.", "tăng cường chăn nuôi dê, cừu lấy sữa.", "đàn bò có xu hướng giảm mạnh."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Dân số, cho biết tỉnh nào có mật độ dân số thấp nhất trong các tỉnh sau đây?", answers: ["Ninh Bình.", "Bắc Kạn.", "Nam Định.", "Thái Bình."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Giao thông, cho biết đường số 2 nối Hà Nội với địa điểm nào sau đây?", answers: ["Lạng Sơn.", "Hà Giang.", "Hạ Long.", "Cao Bằng."], correct: 1 },
+          { question: "Lao động nông thôn nước ta hiện nay", answers: ["ít kinh nghiệm trong nông nghiệp.", "tỉ lệ thiếu việc làm cao và đang giảm.", "rất đông, có tỉ lệ thất nghiệp rất lớn.", "có quy mô đông và tỉ lệ đang tăng."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Nông nghiệp, cho biết tỉnh nào có tổng số trâu và bò lớn nhất trong các tỉnh sau đây?", answers: ["Quảng Bình.", "Hà Tĩnh.", "Quảng Trị.", "Nghệ An."], correct: 3 },
+          { question: "Biện pháp mở rộng rừng đặc dụng ở nước ta là", answers: ["khai thác gỗ củi.", "trồng rừng lấy gỗ.", "lập vườn quốc gia.", "trồng rừng tre nứa."], correct: 2 },
+          { question: "Sông ngòi nước ta phần lớn là sông nhỏ, chủ yếu do", answers: ["chế độ mưa phân mùa, lịch sử phát triển lãnh thổ kéo dài, địa hình nhiều đồi núi.", "mưa lớn tập trung theo mùa, lãnh thổ hẹp ngang, cấu trúc địa hình khá đa dạng.", "lãnh thổ kéo dài và hẹp ngang, địa hình bị chia cắt mạnh, mất lớp phủ thực vật.", "mưa cắt xẻ địa hình, lãnh thổ hẹp ngang, ít sông hình thành do đứt gãy kiến tạo."], correct: 3 },
+          { question: "Cho biểu đồ về diện tích và sản lượng lúa của Đồng bằng sông Hồng và Đồng bằng sông Cửu Long năm 2020...", answers: ["Sự thay đổi diện tích và sản lượng.", "Tốc độ tăng diện tích và sản lượng.", "Cơ cấu diện tích và sản lượng.", "Quy mô diện tích và sản lượng."], correct: 3 },
+          { question: "Việc đẩy mạnh xuất khẩu nông sản ở Tây Nguyên nhằm mục đích chủ yếu là", answers: ["phát triển dịch vụ, sử dụng hiệu quả lao động.", "thu hút nguồn ngoại tệ, nâng vị thế của vùng.", "thay đổi cơ cấu sản xuất, đa dạng hóa kinh tế.", "nâng cao nguồn thu nhập, phát triển sản xuất."], correct: 3 },
+          { question: "Mục đích chủ yếu của việc xây dựng các nhà máy thủy điện ở Trung du và miền núi Bắc Bộ là", answers: ["cung cấp nguồn năng lượng lớn, đẩy mạnh công nghiệp hóa.", "điều tiết dòng chảy sông ngòi, giảm thiểu lũ lụt vùng hạ lưu.", "định canh định cư cho đồng bào dân tộc, giải quyết việc làm.", "tạo mặt nước rộng cho nuôi trồng thủy sản, phát triển du lịch."], correct: 0 },
+          { question: "Đồng bằng sông Cửu Long hiện nay cần chuyển dịch cơ cấu cây trồng chủ yếu do", answers: ["bề mặt sụt lún, nhiều vùng bị phèn và mặn hóa.", "khô hạn kéo dài, vùng rừng ngập mặn thu hẹp.", "xâm nhập mặn rộng, hạn hán, thiếu nước ngọt.", "sạt lở bờ biển, nước biển dâng và nhiệt độ tăng."], correct: 2 },
+          { question: "Hoạt động xuất khẩu của nước ta ngày càng phát triển chủ yếu do", answers: ["tăng cường quản lí nhà nước và mở rộng thêm thị trường.", "khai thác hiệu quả thế mạnh, nâng cao chất lượng lao động.", "hội nhập quốc tế sâu rộng và phát triển sản xuất hàng hóa.", "đa dạng hoá sản xuất, đầu tư vào các ngành có nhiều ưu thế."], correct: 2 },
+          { question: "Cho bảng số liệu: DIỆN TÍCH NUÔI TRỒNG THỦY SẢN VÀ SẢN LƯỢNG THỦY SẢN NUÔI TRỒNG MỘT SỐ TỈNH NĂM 2021...", answers: ["Kết hợp.", "Miền.", "Đường.", "Cột."], correct: 3 },
+          { question: "Phát triển nghề cá ở Duyên hải Nam Trung Bộ có ý nghĩa chủ yếu nào sau đây?", answers: ["Thu hút nguồn đầu tư, tận dụng diện tích mặt nước của vùng.", "Giải quyết vấn đề thực phẩm, tạo nhiều sản phẩm hàng hóa.", "Sử dụng hiệu quả lao động, nâng cao mức sống của người dân.", "Giải quyết việc làm, phát triển công nghiệp chế biến thủy sản."], correct: 1 },
+          { question: "Giải pháp chủ yếu phát triển khu công nghiệp ở Bắc Trung Bộ là", answers: ["thay đổi cơ cấu kinh tế, đảm bảo nguyên liệu, gia tăng chế biến.", "đào tạo lao động, thu hút đầu tư, trang bị cơ sở vật chất kĩ thuật.", "hoàn thiện cơ sở hạ tầng, mở rộng thị trường, tăng khai khoáng.", "hình thành các trung tâm, tạo sản phẩm mới, mở rộng cảng biển."], correct: 1 },
+          { question: "Biện pháp chủ yếu phát triển chăn nuôi ở Đồng bằng sông Hồng là", answers: ["phát triển trang trại, gắn với chế biến và dịch vụ.", "bảo đảm nguồn thức ăn, phòng chống dịch bệnh.", "sử dụng tiến bộ kĩ thuật, dùng nhiều giống mới.", "hiện đại hóa chuồng trại, tăng vật nuôi lấy trứng."], correct: 0 }
+        ]
+      },
+      "bac_ninh_2022_2023_de_02": {
+        subjectName: "Địa Lý",
+        title: "Sở GD&ĐT Bắc Ninh (2022-2023) - Đề 02",
+        questions: [
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Nông nghiệp, cho biết bò được nuôi nhiều nhất ở tỉnh nào sau đây?", answers: ["Hà Tĩnh.", "Quảng Bình.", "Hòa Bình.", "Nghệ An."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các hệ thống sông, hãy cho biết sông Chu thuộc lưu vực sông nào?", answers: ["Lưu vực sông Thái Bình.", "Lưu vực sông Mã.", "Lưu vực sông Cả.", "Lưu vực sông Đồng Nai."], correct: 1 },
+          { question: "Vùng có giá trị sản xuất công nghiệp cao nhất nước ta hiện nay là", answers: ["Trung du miền núi Bắc Bộ.", "Đông Nam Bộ.", "Đồng bằng sông Hồng.", "Bắc Trung Bộ."], correct: 1 },
+          { question: "Thiên tai thường xảy ra ở vùng ven biển nước ta là", answers: ["sóng thần.", "bão.", "lũ nguồn.", "lũ quét."], correct: 1 },
+          { question: "Ngành chăn nuôi chiếm tỉ trọng còn thấp trong cơ cấu giá trị sản xuất nông nghiệp nước ta chủ yếu do", answers: ["hiệu quả chưa thật cao và chưa ổn định.", "nhu cầu thị trường thấp và biến động.", "hay xảy ra dịch bệnh và thiếu giống mới.", "các điều kiện phát triển nhiều hạn chế."], correct: 0 },
+          { question: "Các đô thị nước ta hiện nay", answers: ["đều là các trung tâm du lịch khá lớn.", "có số dân nhỏ và mật độ dân số thấp.", "là thị trường tiêu thụ hàng hóa rộng.", "chỉ có ngành công nghiệp và dịch vụ."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Công nghiệp chung, cho biết trung tâm công nghiệp nào sau đây có ngành sản xuất ô tô?", answers: ["Hải Phòng.", "Thanh Hóa.", "Hà Nội.", "Hạ Long."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Duyên hải Nam Trung Bộ, Vùng Tây Nguyên, cho biết hồ Phú Ninh thuộc tỉnh nào sau đây?", answers: ["Bình Định.", "Phú Yên.", "Quảng Nam.", "Quảng Ngãi."], correct: 2 },
+          { question: "Biện pháp hạn chế xói mòn đất ở đồi núi nước ta là", answers: ["bón phân thích hợp.", "làm ruộng bậc thang.", "tiến hành tăng vụ.", "đẩy mạnh thâm canh."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Kinh tế chung, cho biết tỉnh nào sau đây có khu kinh tế cửa khẩu?", answers: ["Gia Lai.", "Tây Ninh.", "Bình Định.", "Quảng Ngãi."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Du lịch, cho biết điểm du lịch nào sau đây nằm ở độ cao 50 - 500m?", answers: ["Tràm Chim.", "Cần Giờ.", "Cát Tiên.", "Chư Yang Sin."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Trung du và miền núi Bắc Bộ, Vùng Đồng bằng sông Hồng, cho biết địa điểm nào sau đây có quặng sắt?", answers: ["Na Rì.", "Sơn Dương.", "Trại Cau.", "Sơn Động."], correct: 2 },
+          { question: "Cho bảng số liệu: TỔNG SỐ DÂN, SỐ DÂN THÀNH THỊ CỦA IN-ĐÔ-NÊ-XI-A VÀ THÁI LAN NĂM 2000 VÀ NĂM 2020. Theo bảng số liệu, cho biết nhận xét nào sau đây đúng về tỉ lệ dân thành thị của In-đô-nê-xi-a và Thái Lan?", answers: ["Thái Lan thấp hơn và tăng chậm hơn.", "In-đô-nê-xi-a và Thái Lan đều giảm.", "In-đô-nê-xi-a thấp hơn và tăng nhanh hơn.", "Thái Lan thấp hơn và tăng nhanh hơn."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Khí hậu, cho biết địa điểm nào sau đây có tổng lượng mưa trung bình năm trên 2800mm?", answers: ["TP. Hồ Chí Minh.", "Hà Nội.", "Huế.", "Hà Tiên."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Hành chính, cho biết tỉnh nào vừa giáp Lào vừa giáp biển?", answers: ["Bình Thuận.", "Kon Tum.", "Quảng Ngãi.", "Quảng Nam."], correct: 3 },
+          { question: "Tuyến vận tải đường sắt đóng vai trò chủ đạo trên hành lang kinh tế Bắc - Nam ở nước ta là", answers: ["Hà Nội - TP. Hồ Chí Minh.", "Hà Nội - Hải Phòng.", "Hà Nội - Lào Cai.", "Lưu Xá - Kép - Uông Bí - Bãi Cháy."], correct: 0 },
+          { question: "Các nhà máy nhiệt điện ở phía Bắc nước ta hoạt động chủ yếu dựa vào nguồn nhiên liệu nào sau đây?", answers: ["Năng lượng mới.", "Khí đốt.", "Than.", "Dầu nhập nội."], correct: 2 },
+          { question: "Cây công nghiệp được trồng nhiều ở Đông Nam Bộ là", answers: ["điều.", "cói.", "dâu tằm.", "chè."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các miền tự nhiên, cho biết núi nào sau đây thuộc miền Bắc và Đông Bắc Bắc Bộ?", answers: ["Phanxipăng.", "Phu Luông.", "Tây Côn Lĩnh.", "Pu Trà."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Bắc Trung Bộ, cho biết cảng biển Vũng Áng thuộc tỉnh nào sau đây?", answers: ["Quảng Trị.", "Hà Tĩnh.", "Nghệ An.", "Thanh Hóa."], correct: 1 },
+          { question: "Lao động nước ta hiện nay", answers: ["tỉ trọng trong nông nghiệp tăng lên.", "phân bố không đều giữa các vùng.", "tập trung nhiều ở khu vực Nhà nước.", "chưa qua đào tạo chiếm tỉ lệ thấp."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Dân số, cho biết đô thị Quy Nhơn thuộc tỉnh nào sau đây?", answers: ["Phú Yên.", "Bình Định.", "Ninh Thuận.", "Khánh Hòa."], correct: 1 },
+          { question: "Sản lượng thủy sản nuôi trồng ở nước ta hiện nay có tốc độ tăng nhanh hơn khai thác chủ yếu do", answers: ["chủ động sản xuất, đáp ứng tốt yêu cầu của thị trường.", "diện tích mặt nước tăng, được Nhà nước ưu tiên đầu tư.", "tăng cường cải tiến kĩ thuật, khắc phục được dịch bệnh.", "khắc phục dịch bệnh, được Nhà nước ưu tiên đầu tư."], correct: 0 },
+          { question: "Thành phần kinh tế Nhà nước ở nước ta hiện nay", answers: ["có số lượng doanh nghiệp lớn nhất cả nước.", "quản lí nhiều ngành và lĩnh vực kinh tế then chốt.", "chi phối hoạt động của tất cả các ngành kinh tế.", "chiếm tỉ trọng cao trong GDP và liên tục tăng lên."], correct: 1 },
+          { question: "Cho biểu đồ về GDP của In-đô-nê-xi-a và Ma-lai-xi-a năm 2015 và 2020. Theo bảng số liệu, nhận xét nào sau đây đúng khi so sánh GDP của In-đô-nê-xi-a và Ma-lai-xi-a năm 2020 với năm 2015?", answers: ["Ma-lai-xi-a tăng nhiều hơn In-đô-nê-xi-a.", "In-đô-nê-xi-a tăng nhanh hơn Ma-lai-xi-a.", "Ma-lai-xi-a tăng, In-đô-nê-xi-a giảm.", "Ma-lai-xi-a tăng gấp 2 lần In-đô-nê-xi-a."], correct: 1 },
+          { question: "Vùng nội thủy của biển nước ta", answers: ["bao gồm các quần đảo ở xa bờ.", "nằm ở phía trong đường cơ sở.", "là phần nằm ngầm ở dưới biển.", "hợp với lãnh hải rộng 12 hải lí."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Giao thông, cho biết đường quốc lộ số 9 nối Đông Hà với cửa khẩu nào sau đây?", answers: ["Cầu Treo.", "Cha Lo.", "Lao Bảo.", "Nậm Cắn."], correct: 2 },
+          { question: "Các huyện đảo của nước ta", answers: ["chủ yếu nằm xa bờ, diện tích rất lớn.", "chỉ phát triển ngành khai thác hải sản.", "nhiều huyện có thế mạnh về du lịch.", "phát triển công nghiệp khai khoáng."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Đông Nam Bộ, Vùng Đồng bằng sông Cửu Long, cho biết kênh Phụng Hiệp nối Cà Mau với điểm nào sau đây?", answers: ["U Minh.", "Năm Căn.", "Ngã Bảy.", "Vị Thanh."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các ngành công nghiệp trọng điểm, cho biết nhà máy nhiệt điện nào sau đây có công suất lớn nhất miền Bắc?", answers: ["Uông Bí.", "Na Dương.", "Phả Lại.", "Ninh Bình."], correct: 2 },
+          { question: "Thay đổi cơ cấu mùa vụ trong sản xuất lương thực ở Đồng bằng sông Cửu Long chủ yếu nhằm", answers: ["giảm thiệt hại do thiên tai và sử dụng hợp lí đất phèn, mặn.", "tăng năng suất, tạo nhiều việc làm cho người lao động.", "giảm tác động của biến đổi khí hậu, bảo vệ môi trường.", "phù hợp hơn với điều kiện sinh thái, tăng hiệu quả kinh tế."], correct: 3 },
+          { question: "Cho bảng số liệu: SẢN LƯỢNG LÚA CỦA NƯỚC TA NĂM 2015 VÀ NĂM 2020. Theo bảng số liệu, để thể hiện quy mô và cơ cấu sản lượng lúa của nước ta năm 2015 và năm 2020, dạng biểu đồ nào sau đây là thích hợp nhất?", answers: ["Tròn.", "Cột.", "Đường.", "Miền."], correct: 0 },
+          { question: "Ý nghĩa chủ yếu của phát triển dịch vụ hàng hải ở Duyên hải Nam Trung Bộ là", answers: ["thay đổi phân công lao động theo lãnh thổ, tăng vai trò trung chuyển.", "thúc đẩy xuất nhập khẩu hàng hóa và hình thành khu kinh tế ven biển.", "tạo ra nhiều việc làm và thay đổi cơ cấu kinh tế nông thôn ven biển.", "thu hút đầu tư nước ngoài và đẩy mạnh giao lưu kinh tế với các vùng."], correct: 1 },
+          { question: "Giải pháp chủ yếu để khai thác thế mạnh về đánh bắt thủy sản ở Bắc Trung Bộ là", answers: ["đẩy mạnh khai thác ở ven bờ, mở rộng xuất khẩu, tăng chế biến.", "hiện đại hóa tàu thuyền, đánh bắt xa bờ, nâng giá trị và hiệu quả.", "bảo vệ các bãi cá đẻ, cấm khai thác ở khu bảo tồn, nâng cấp cảng.", "thu hút đầu tư, cải tạo cảng cá, tập huấn kĩ thuật mới cho ngư dân."], correct: 1 },
+          { question: "Phát triển cây công nghiệp lâu năm ở Tây Nguyên nhằm mục đích chủ yếu là", answers: ["thay đổi cơ cấu kinh tế, phát huy lợi thế.", "tăng trưởng kinh tế, phát huy thế mạnh.", "thúc đẩy xuất khẩu, bảo vệ môi trường.", "thay đổi tập quán sản xuất, tạo việc làm."], correct: 1 },
+          { question: "Cho biểu đồ về diện tích và sản lượng cao su của nước ta giai đoạn 2010 - 2020. Biểu đồ thể hiện nội dung nào sau đây?", answers: ["Cơ cấu diện tích và sản lượng cao su.", "Quy mô diện tích và sản lượng cao su.", "Tốc độ tăng trưởng diện tích và sản lượng.", "Chuyển dịch cơ cấu diện tích và sản lượng."], correct: 1 },
+          { question: "Giải pháp chủ yếu nhằm phát triển bền vững cây ăn quả ở Trung du và miền núi Bắc Bộ là", answers: ["đẩy mạnh mở rộng diện tích, tăng sản lượng, ứng dụng kĩ thuật mới.", "mở rộng vùng chuyên canh, tăng năng suất, sử dụng nhiều máy móc.", "quy hoạch vùng trồng, áp dụng tiến bộ kĩ thuật, mở rộng thị trường.", "tăng sự liên kết, phát triển thị trường, đẩy mạnh sản xuất thâm canh."], correct: 2 },
+          { question: "Miền Bắc và Đông Bắc Bắc Bộ nước ta có một mùa ít mưa chủ yếu do tác động của", answers: ["gió mùa Đông Bắc, hoạt động của frông, địa hình các dãy núi cao.", "Tín phong bán cầu Bắc, dải hội tụ nhiệt đới và vị trí gần chí tuyến.", "gió hướng đông bắc, vị trí ở xa xích đạo, bão và áp thấp nhiệt đới.", "Tín phong bán cầu Bắc, gió mùa Đông Bắc, hoạt động của frông."], correct: 3 },
+          { question: "Hướng phát triển công nghiệp chủ yếu ở Đồng bằng sông Hồng là", answers: ["tăng cường liên kết vùng, bổ sung lao động, áp dụng công nghệ mới.", "đẩy mạnh các ngành trọng điểm, thu hút đầu tư, hoàn thiện quy hoạch.", "xây dựng cơ cấu ngành linh hoạt, nâng chất lượng, mở rộng thị trường.", "đổi mới thiết bị, nâng chất lượng, phát triển các ngành có thế mạnh."], correct: 1 },
+          { 
+            question: "Kim ngạch nhập khẩu nguyên liệu, tư liệu sản xuất của nước ta hiện nay tăng chủ yếu do", 
+            answers: [
+              "giá nguyên, nhiên liệu tăng cao và đẩy mạnh hội nhập quốc tế.", 
+              "phục hồi và phát triển của sản xuất, đáp ứng nhu cầu xuất khẩu.", 
+              "phục vụ quá trình công nghiệp hóa, đáp ứng nhu cầu tiêu dùng.", 
+              "nhu cầu tiêu dùng tăng lên, phục hồi và phát triển của sản xuất."
+            ], 
+            correct: 1 
+          }
+        ]
+      },
+      "binh_phuoc_2022_2023_de_03": {
+        subjectName: "Địa Lý",
+        title: "Sở GD&ĐT Bình Phước (2022-2023) - Đề 03",
+        questions: [
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Trung du và miền núi Bắc Bộ, Vùng Đồng bằng sông Hồng, cho biết điểm nước khoáng Kênh Gà thuộc tỉnh nào sau đây?", answers: ["Hà Nam.", "Hoà Bình.", "Ninh Bình.", "Nam Định."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các hệ thống sông, cho biết lượng nước trung bình nhỏ nhất của sông Hồng (trạm Hà Nội) vào tháng nào sau đây?", answers: ["Tháng 4.", "Tháng 3.", "Tháng 2.", "Tháng 5."], correct: 2 },
+          { question: "Cơ cấu ngành công nghiệp của nước ta hiện nay", answers: ["nổi lên một số ngành trọng điểm.", "số lượng ngành còn kém đa dạng.", "ưu tiên các sản phẩm có giá trị cao.", "giảm tỉ trọng công nghiệp chế biến."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các ngành công nghiệp trọng điểm, cho biết mỏ dầu nào đã có đường ống dẫn sản phẩm vào đất liền trong các mỏ sau đây (năm 2007)?", answers: ["Hồng Ngọc.", "Rạng Đông.", "Đại Hùng.", "Bạch Hổ."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Hành chính, cho biết tỉnh nào sau đây giáp Campuchia?", answers: ["Long An.", "Quảng Trị.", "Quảng Nam.", "Quảng Bình."], correct: 0 },
+          { question: "Biện pháp chủ yếu để bảo vệ các nguồn gen động, thực vật quý hiếm có nguy cơ tuyệt chủng ở nước ta là", answers: ["tích cực trồng rừng.", "chống xói mòn đất.", "nhập các giống mới.", "ban hành Sách đỏ Việt Nam."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Nông nghiệp, cho biết tỉnh nào sau đây có sản lượng thịt hơi xuất chuồng tính theo đầu người lớn nhất (năm 2007)?", answers: ["Lai Châu.", "Quảng Trị.", "Khánh Hòa.", "Lâm Đồng."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Công nghiệp chung, cho biết trung tâm công nghiệp nào sau đây có ngành hóa chất, phân bón (năm 2007)?", answers: ["Nha Trang.", "Phan Thiết.", "Quy Nhơn.", "Quảng Ngãi."], correct: 2 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Bắc Trung Bộ, cho biết cảng Thuận An thuộc tỉnh nào sau đây?", answers: ["Quảng Bình.", "Thừa Thiên - Huế.", "Thanh Hóa.", "Hà Tĩnh."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Du lịch, cho biết trung tâm du lịch nào sau đây có du lịch biển?", answers: ["Đà Nẵng.", "Hà Nội.", "Lạng Sơn.", "Cần Thơ."], correct: 0 },
+          { question: "Cây công nghiệp lâu năm được phát triển từ rất sớm ở Đông Nam Bộ là", answers: ["chè.", "cao su.", "quế.", "hồi."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Giao thông, cho biết cảng nào sau đây là cảng sông?", answers: ["Cảng Cửa Ông.", "Cảng Sơn Tây.", "Cảng Cái Lân.", "Cảng Cửa Lò."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Đông Nam Bộ, Vùng Đồng bằng sông Cửu Long, cho biết trung tâm công nghiệp nào sau đây có Nhà máy nhiệt điện (năm 2007)?", answers: ["Kiên Lương.", "Long Xuyên.", "Cần Thơ.", "Rạch Giá."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Kinh tế chung, cho biết trung tâm kinh tế nào sau đây có quy mô GDP lớn nhất Đồng bằng sông Cửu Long?", answers: ["Long Xuyên.", "Cà Mau.", "Cần Thơ.", "Mỹ Tho."], correct: 2 },
+          { question: "Dầu khí là sản phẩm của ngành công nghiệp", answers: ["năng lượng.", "vật liệu xây dựng.", "cơ khí chế tạo.", "luyện kim đen."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Dân số, cho biết trong các đô thị sau đây, đô thị nào có quy mô dân số nhỏ nhất?", answers: ["Hưng Yên.", "Hạ Long.", "Nam Định.", "Hải Phòng."], correct: 0 },
+          { question: "Cho biểu đồ: SỐ DÂN CỦA THÁI LAN VÀ VIỆT NAM NĂM 2016 VÀ 2020. Theo biểu đồ, nhận xét nào sau đây đúng về số dân của Thái Lan và Việt Nam?", answers: ["Số dân của Thái Lan tăng nhanh hơn Việt Nam.", "Số dân của Việt Nam tăng nhiều hơn Thái Lan.", "Số dân của Việt Nam tăng ít hơn Thái Lan.", "Số dân của Thái Lan luôn nhiều hơn Việt Nam."], correct: 1 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Các miền tự nhiên, cho biết cao nguyên nào sau đây có độ cao lớn nhất vùng núi Trường Sơn Nam?", answers: ["Đắk Lắk.", "Lâm Viên.", "Mơ Nông.", "Kon Tum."], correct: 1 },
+          { question: "Cho bảng số liệu: SẢN LƯỢNG ĐẬU TƯƠNG CỦA MI-AN-MA VÀ VIỆT NAM, GIAO ĐOẠN 2015 – 2020. Theo bảng số liệu, cho biết nhận xét nào sau đây đúng với sự thay đổi sản lượng đậu tương năm 2020 so với năm 2015 của Mi-an-ma và Việt Nam?", answers: ["Mi-an-ma giảm nhiều hơn Việt Nam.", "Mi-an-ma giảm nhanh hơn Việt Nam.", "Việt Nam giảm nhiều hơn Mi-an-ma.", "Việt Nam giảm ít hơn Mi-an-ma."], correct: 0 },
+          { question: "Ngập lụt ở đồng bằng sông Cửu Long chủ yếu do triều cường và", answers: ["mưa lớn.", "nước biển dâng.", "lũ quét.", "mưa đá."], correct: 0 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Vùng Duyên hải Nam Trung Bộ, Vùng Tây Nguyên, cho biết hồ nào sau đây thuộc Duyên hải Nam Trung Bộ?", answers: ["Biển Hồ.", "Hồ Đơn Dương.", "Hồ Lắk.", "Hồ Sông Hinh."], correct: 3 },
+          { question: "Căn cứ vào Atlat Địa lí Việt Nam trang Khí hậu, cho biết trạm khí tượng nào có nhiệt độ trung bình các tháng luôn trên 25°C?", answers: ["TP Hồ Chí Minh.", "Đà Nẵng.", "Hà Nội.", "Sa Pa."], correct: 0 },
+          { question: "Nước ta có nguồn tài nguyên khoáng sản phong phú là do vị trí địa lí", answers: ["giáp vùng biển rộng lớn, giàu tài nguyên.", "có hoạt động của gió mùa và Tín phong.", "nằm trên đường di lưu và di cư sinh vật.", "nằm liền kề các vành đai sinh khoáng lớn."], correct: 3 },
+          { question: "Hoạt động vận tải hàng không của nước ta hiện nay", answers: ["được quan tâm đầu tư, phát triển.", "chủ yếu phục vụ khách quốc tế.", "phát triển đồng đều ở các vùng.", "chỉ có doanh nghiệp Nhà nước."], correct: 0 },
+          { question: "Lao động nông thôn nước ta hiện nay", answers: ["hầu hết đã qua đào tạo nghề nghiệp.", "chỉ hoạt động trong ngành trồng trọt.", "phần lớn đã đạt mức thu nhập rất cao.", "tỉ trọng vẫn cao song đang giảm dần."], correct: 3 },
+          { question: "Sản xuất muối ở các vùng biển nước ta hiện nay", answers: ["đã tiến hành theo hướng công nghiệp.", "chỉ phát triển ở các tỉnh miền Trung.", "chủ yếu phục vụ mục đích xuất khẩu.", "phát triển mạnh ở vùng biển phía Bắc."], correct: 0 },
+          { question: "Ý nghĩa chủ yếu của việc đẩy mạnh đánh bắt thủy sản xa bờ ở nước ta là", answers: ["bảo vệ môi trường nước ven bờ, phát triển du lịch biển.", "mang lại hiệu quả kinh tế cao, khẳng định chủ quyền.", "đẩy mạnh giao lưu, bảo vệ nguồn lợi thủy sản ven bờ.", "khai thác tốt ngư trường xa bờ, phát triển giao thông."], correct: 1 },
+          { question: "Trình độ đô thị hóa của nước ta còn thấp, chủ yếu do", answers: ["số lượng dân cư vẫn nhiều ở nông thôn.", "vốn đầu tư ít và công nghiệp hóa chậm.", "chịu sự tàn phá của nhiều loại thiên tai.", "phân bố đô thị không đều trong cả nước."], correct: 1 },
+          { question: "Cơ cấu kinh tế theo thành phần kinh tế của nước ta hiện nay", answers: ["thay đổi phù hợp với xu thế hội nhập.", "kinh tế tư nhân đóng vai trò chủ đạo.", "tỉ trọng khu vực kinh tế có vốn đầu tư nước ngoài giảm.", "chỉ tập trung vào khu vực kinh tế Nhà nước."], correct: 0 },
+          { question: "Sản xuất cây công nghiệp nước ta hiện nay", answers: ["phần lớn trồng ở đồng bằng.", "chủ yếu cây cận nhiệt đới.", "chỉ hướng vào xuất khẩu.", "có nhiều vùng chuyên canh."], correct: 3 },
+          { question: "Giải pháp chủ yếu để ổn định sản xuất cây công nghiệp lâu năm ở vùng Tây Nguyên là", answers: ["tăng diện tích kết hợp bảo vệ rừng, phát triển thủy lợi.", "mở rộng diện tích có quy hoạch, phát triển chế biến.", "đa dạng hóa cơ cấu cây công nghiệp, mở rộng thị trường.", "đẩy mạnh xuất khẩu, trồng các giống năng suất cao."], correct: 1 },
+          { question: "Biện pháp chủ yếu để duy trì thế mạnh sản xuất lương thực ở Đồng bằng sông Cửu Long hiện nay là", answers: ["tích cực cải tạo đất mặn, mở rộng diện tích lúa.", "mở rộng thị trường, tăng cạnh tranh bằng hạ giá, tăng thu nhập.", "bổ sung số lượng lao động, đầu tư cho chế biến.", "chuyển dịch cơ cấu mùa vụ, sử dụng giống mới."], correct: 3 },
+          { question: "Việc phát triển các tuyến đường ngang ở duyên hải Nam Trung Bộ mang lại ý nghĩa chủ yếu nào sau đây?", answers: ["Phân bố lại dân cư và lao động, nâng cao năng lực vận tải.", "Tăng cường liên kết, mở rộng các vùng hậu phương cảng.", "Giải quyết nhiều việc làm, cải thiện đời sống cho dân cư.", "Kết nối với khu vực Nam Lào, hình thành các đô thị mới."], correct: 1 },
+          { question: "Hướng phát triển công nghiệp chủ yếu ở Đồng bằng sông Hồng là", answers: ["chuyên môn hóa, tập trung hóa trong sản xuất.", "đầu tư chiều sâu, hình thành ngành trọng điểm.", "đổi mới sản phẩm, gắn truyền thống với hiện đại.", "sử dụng công nghệ mới, ưu tiên tạo ra việc làm."], correct: 1 },
+          { question: "Nhân tố nào sau đây là chủ yếu, chi phối sự tăng trưởng khách du lịch quốc tế đến với nước ta?", answers: ["Lao động ngày càng chuyên nghiệp, dịch vụ hoàn thiện.", "Tài nguyên du lịch phong phú, có cơ sở lưu trú hiện đại.", "Chính sách luôn đổi mới, các sản phẩm du lịch độc đáo.", "Ra đời nhiều công ty lữ hành, quảng bá du lịch rộng rãi."], correct: 2 },
+          { question: "Cho biểu đồ về diện tích cà phê và cao su của nước ta năm 2015 và 2020: Biểu đồ thể hiện nội dung nào sau đây?", answers: ["Tốc độ tăng trưởng diện tích cà phê và cao su của nước ta năm 2015 và 2020.", "Cơ cấu diện tích cà phê và cao su của nước ta năm 2015 và 2020.", "Sự thay đổi cơ cấu diện tích cà phê và cao su của nước ta năm 2015 và 2020.", "Quy mô diện tích cà phê và cao su của nước ta năm 2015 và 2020."], correct: 3 },
+          { question: "Cho bảng số liệu: DIỆN TÍCH RỪNG VÀ TỈ LỆ CHE PHỦ RỪNG CỦA NƯỚC TA GIAO ĐOẠN 2008 – 2021. Theo bảng số liệu, để thể hiện diện tích rừng và tỉ lệ che phủ rừng của nước ta giai đoạn 2008 - 2021, dạng biểu đồ nào sau đây là thích hợp nhất?", answers: ["Miền.", "Đường.", "Kết hợp.", "Tròn."], correct: 2 },
+          { question: "Sinh vật cận nhiệt và ôn đới ở phần lãnh thổ phía Bắc đa dạng hơn phần lãnh thổ phía Nam nước ta chủ yếu do", answers: ["nằm gần vùng ngoại chí tuyến, gió tây nam, lãnh thổ rộng lớn.", "nằm ở vùng nội chí tuyến, gió mùa Tây Nam, độ cao địa hình.", "vị trí gần chí tuyến Bắc, gió mùa Đông Bắc, đầy đủ ba đai cao.", "vị trí ở xa xích đạo, Tín phong Đông Bắc, có địa hình núi cao."], correct: 2 },
+          { question: "Mục đích chủ yếu của việc phát triển kinh tế biển ở Trung du và miền núi Bắc Bộ là", answers: ["nâng cao vị thế vùng, bảo vệ chủ quyền biển đảo, phát huy lợi thế.", "đa dạng sản phẩm hàng hóa, thúc đẩy ngoại thương, tăng thu nhập.", "thúc đẩy phân công lao động, thu hút vốn đầu tư, tăng nguồn thu.", "phát huy nguồn lực, tạo cơ hội mở cửa, tăng trưởng kinh tế."], correct: 0 },
+          { question: "Mục đích chủ yếu của việc hình thành các khu kinh tế ven biển ở Bắc Trung Bộ là", answers: ["thay đổi bộ mặt kinh tế nông thôn, mở rộng địa giới các đô thị.", "tạo cơ hội mở cửa, giải quyết tốt việc làm, nâng cao đời sống.", "thu hút đầu tư, chuyển dịch cơ cấu kinh tế, phát huy thế mạnh.", "hạn chế các thiên tai từ biển, tiền đề tiến ra biển và đại dương."], correct: 2 }
+        ]
+      },
+      "at_school_lich_su_2024_de_01": {
+        subjectName: "Lịch Sử",
+        title: "KÌ THI THỬ TỐT NGHIỆP THPT NĂM 2018 - ĐỀ 01",
+        questions: [
+          { question: "Cuộc khởi nghĩa nào dưới đây thuộc phong trào Cần vương ở Việt Nam cuối thế kỷ XIX?", answers: ["Yên Bái.", "Hương Khê.", "Thái Nguyên.", "Yên Thế."], correct: 1 },
+  { question: "Nhiệm vụ cấp thiết của cách mạng Việt Nam sau Đại thắng mùa Xuân 1975 là gì?", answers: ["Thực hiện ngay công cuộc đổi mới đất nước.", "Hoàn thành thống nhất đất nước về mặt lãnh thổ.", "Hoàn thành cải cách ruộng đất và triệt để giảm tô.", "Hoàn thành thống nhất đất nước về mặt nhà nước."], correct: 3 },
+  { question: "“Đánh đuổi giặc Pháp, khôi phục nước Việt Nam, thành lập nước Cộng hòa Dân quốc Việt Nam” là", answers: ["chủ trương của Việt Nam Quang phục hội.", "chủ trương của Hội Duy tân.", "mục đích của phong trào Đông du.", "mục đích của phong trào Duy tân."], correct: 0 },
+  { question: "Căn cứ địa cách mạng đầu tiên của Việt Nam trong giai đoạn 1939 - 1945 là", answers: ["Thái Nguyên.", "Tân Trào - Tuyên Quang.", "Bắc Kạn.", "Bắc Sơn - Võ Nhai."], correct: 3 },
+  { question: "Từ năm 1952 đến năm 1960, tình hình kinh tế Nhật Bản như thế nào?", answers: ["Có bước phát triển nhanh.", "Phát triển xen lẫn suy thoái.", "Bước đầu suy thoái.", "Cơ bản được phục hồi."], correct: 0 },
+  { question: "Một trong những hệ quả tích cực của toàn cầu hóa là", answers: ["thúc đẩy sự phát triển của lực lượng sản xuất.", "giúp các nước giữ nguyên cơ cấu kinh tế.", "giải quyết triệt để những bất công xã hội.", "giải quyết căn bản sự phân hóa giàu nghèo."], correct: 0 },
+  { question: "Tháng 3 - 1921, Đảng Bônsêvích quyết định thực hiện Chính sách kinh tế mới (NEP) ở nước Nga trong bối cảnh", answers: ["quan hệ sản xuất phong kiến vẫn thống trị.", "đã hoàn thành tập thể hóa nông nghiệp.", "nền kinh tế quốc dân bị tàn phá nghiêm trọng.", "đã hoàn thành nhiệm vụ công nghiệp hóa."], correct: 2 },
+  { question: "Ngày 8 - 9 - 1945, Chủ tịch Hồ Chí Minh ký Sắc lệnh thành lập Nha Bình dân học vụ để thực hiện nhiệm vụ gì?", answers: ["Bổ túc văn hóa.", "Chống giặc dốt.", "Cải cách giáo dục.", "Khai giảng các bậc học."], correct: 1 },
+  { question: "Năm 1949, Liên Xô đạt được thành tựu khoa học - kỹ thuật nào dưới đây?", answers: ["Chế tạo thành công bom nguyên tử.", "Phóng tàu vũ trụ Phương Đông.", "Phóng thành công vệ tinh nhân tạo.", "Đưa con người lên thám hiểm Mặt Trăng."], correct: 0 },
+  { question: "Năm 1953, thực dân Pháp gặp khó khăn nào trong cuộc chiến tranh xâm lược ở Việt Nam?", answers: ["Bị Mỹ ép kết thúc chiến tranh.", "Vùng chiếm đóng bị thu hẹp.", "Mỹ cắt giảm nguồn viện trợ.", "Bước đầu để mất quyền chủ động."], correct: 1 },
+  { question: "Giai cấp công nhân Việt Nam có mối quan hệ gắn bó mật thiết nhất với lực lượng xã hội nào?", answers: ["Thợ thủ công.", "Tiểu thương.", "Nông dân.", "Tiểu tư sản."], correct: 2 },
+  { question: "Nhiệm vụ cơ bản của cách mạng miền Nam được Hội nghị lần thứ 21 Ban Chấp hành Trung ương Đảng Lao động Việt Nam (tháng 7 - 1973) xác định là gì?", answers: ["Chỉ đấu tranh chính trị để thống nhất đất nước.", "Tiến hành cuộc cách mạng ruộng đất.", "Tiếp tục cuộc cách mạng dân tộc dân chủ nhân dân.", "Giải phóng miền Nam trong năm 1975."], correct: 2 },
+  { question: "Nguyên nhân sâu xa dẫn đến cuộc Chiến tranh thế giới thứ hai (1939 - 1945) là gì?", answers: ["Mâu thuẫn gay gắt giữa phe Đồng minh với phe phát xít.", "Quy luật phát triển không đều của chủ nghĩa tư bản.", "Chính sách theo “chủ nghĩa biệt lập” của Mỹ và Anh.", "Các thế lực phát xít lên cầm quyền ở một số nước Âu - Mỹ."], correct: 1 },
+  { question: "Thời cơ “ngàn năm có một” để nhân dân Việt Nam tổng khởi nghĩa giành chính quyền năm 1945 kết thúc khi", answers: ["Nhật giao Đông Dương cho quân Trung Hoa Dân quốc.", "quân Đồng minh vào Đông Dương giải giáp quân đội Nhật.", "thực dân Pháp bắt đầu nổ súng xâm lược trở lại Việt Nam.", "Nhật cùng thực dân Anh chống phá chính quyền cách mạng."], correct: 1 },
+  { question: "Một trong những nguyên nhân thất bại của phong trào yêu nước theo khuynh hướng dân chủ tư sản ở Việt Nam những năm đầu thế kỷ XX là", answers: ["phong trào còn mang nặng tính tự phát.", "chưa sử dụng nhiều phương pháp đấu tranh.", "thiếu sự lãnh đạo của một giai cấp tiên tiến.", "không gắn cứu nước với canh tân đất nước."], correct: 2 },
+  { question: "Chính phủ nước Việt Nam Dân chủ Cộng hòa ký với Chính phủ Pháp bản Hiệp định Sơ bộ (6 - 3 - 1946) nhằm", answers: ["buộc Pháp phải thừa nhận Việt Nam là một quốc gia dân chủ.", "buộc Pháp phải thừa nhận Việt Nam là một quốc gia độc lập.", "tránh việc cùng lúc phải chống lại nhiều thế lực ngoại xâm.", "tạo điều kiện để quân Đồng minh vào giải giáp quân đội Nhật."], correct: 2 },
+  { question: "Trong chiến dịch Hồ Chí Minh địa bàn tác chiến của các lực lượng vũ trang nhân dân (1975), Việt Nam là", answers: ["rừng núi.", "đô thị.", "nông thôn.", "trung du."], correct: 1 },
+  { question: "Nội dung nào không phản ánh đúng âm mưu của Mỹ ở Đông Dương trong những năm 1951 - 1954?", answers: ["Đưa quân đội tham chiến trực tiếp.", "Ngăn chặn ảnh hưởng của chủ nghĩa xã hội.", "Quốc tế hóa cuộc chiến tranh Đông Dương.", "Từng bước thay chân quân Pháp."], correct: 0 },
+  { question: "Xu hướng bạo động và xu hướng cải cách trong phong trào yêu nước và cách mạng ở Việt Nam những năm đầu thế kỷ XX đều", answers: ["không bị động trông chờ vào sự giúp đỡ từ bên ngoài.", "xuất phát từ truyền thống yêu nước của dân tộc.", "do giai cấp tư sản khởi xướng và lãnh đạo.", "có sự kết hợp nhiệm vụ chống đế quốc và phong kiến."], correct: 1 },
+  { question: "Biểu hiện nào dưới đây phản ánh không đúng xu thế phát triển của thế giới từ khi Chiến tranh lạnh chấm dứt đến năm 2000?", answers: ["Hòa bình, hợp tác và phát triển là xu thế chủ đạo của thế giới.", "Các quốc gia đều tập trung lấy phát triển kinh tế làm trọng điểm.", "Trật tự thế giới đơn cực được xác lập trong quan hệ quốc tế.", "Các nước lớn điều chỉnh quan hệ theo hướng đối thoại, thỏa hiệp."], correct: 2 },
+  { question: "Nội dung nào dưới đây là điểm khác nhau giữa Luận cương chính trị tháng 10 - 1930 của Đảng Cộng sản Đông Dương với Cương lĩnh chính trị đầu tiên của Đảng Cộng sản Việt Nam?", answers: ["Chủ trương tập hợp lực lượng cách mạng.", "Xác định giai cấp lãnh đạo.", "Đề ra phương hướng chiến lược.", "Xác định phương pháp đấu tranh."], correct: 0 },
+  { question: "Trong bối cảnh Hiệp ước Hoa - Pháp được ký kết (tháng 2 - 1946), Chính phủ nước Việt Nam Dân chủ Cộng hòa thực hiện chủ trương gì?", answers: ["Chiến đấu chống thực dân Pháp và quân Trung Hoa Dân quốc.", "Phát động toàn quốc kháng chiến chống thực dân Pháp.", "Hòa với thực dân Pháp để đánh quân Trung Hoa Dân quốc.", "Hòa hoãn và nhân nhượng có nguyên tắc với thực dân Pháp."], correct: 3 },
+  { question: "Trong quá trình thực hiện chiến lược toàn cầu từ sau Chiến tranh thế giới thứ hai đến năm 2000, Mỹ đạt được kết quả nào dưới đây?", answers: ["Duy trì sự tồn tại và hoạt động của tất cả các tổ chức quân sự.", "Duy trì vị trí cường quốc số một thế giới trên tất cả các lĩnh vực.", "Làm chậm quá trình giành thắng lợi của phong trào giải phóng dân tộc.", "Trực tiếp xóa bỏ hoàn toàn chế độ phân biệt chủng tộc."], correct: 2 },
+  { question: "Một trong những tác động của phong trào giải phóng dân tộc đối với quan hệ quốc tế sau Chiến tranh thế giới thứ hai là", answers: ["làm xuất hiện xu thế hòa hoãn Đông - Tây ở châu Âu.", "tạo cơ sở hình thành các liên minh kinh tế - quân sự.", "buộc Mỹ phải chấm dứt Chiến tranh lạnh với Liên Xô.", "góp phần làm đảo lộn chiến lược toàn cầu của Mỹ."], correct: 3 },
+  { question: "Những chuyển biến về kinh tế, xã hội ở Việt Nam trong cuộc khai thác thuộc địa lần thứ nhất (1897 - 1914) của thực dân Pháp đã", answers: ["thúc đẩy phong trào công nhân bước đầu chuyển sang tự giác.", "tạo điều kiện cho sự hình thành khuynh hướng cứu nước mới.", "làm cho tầng lớp tư sản Việt Nam trở thành một giai cấp.", "giúp các sĩ phu phong kiến chuyển hẳn sang lập trường tư sản."], correct: 1 },
+  { question: "Nét nổi bật về nghệ thuật chỉ đạo chiến tranh cách mạng của Đảng Lao động Việt Nam trong cuộc Tổng tiến công và nổi dậy Xuân 1975 là", answers: ["lựa chọn đúng địa bàn và chủ động tạo thời cơ tiến công.", "kết hợp tiến công và khởi nghĩa của lực lượng vũ trang.", "đi từ khởi nghĩa từng phần tiến lên chiến tranh cách mạng.", "kết hợp đánh thắng nhanh và đánh chắc, tiến chắc."], correct: 0 },
+  { question: "Hiệp ước Patenốt (1884) được ký kết giữa triều đình nhà Nguyễn với thực dân Pháp là mốc đánh dấu", answers: ["các vua nhà Nguyễn hoàn toàn đầu hàng thực dân Pháp.", "thực dân Pháp thiết lập xong bộ máy cai trị ở Việt Nam.", "thực dân Pháp căn bản hoàn thành công cuộc bình định Việt Nam.", "thực dân Pháp căn bản hoàn thành công cuộc xâm lược Việt Nam."], correct: 3 },
+  { question: "Nội dung đổi mới về kinh tế ở Việt Nam (từ tháng 12 - 1986) và Chính sách kinh tế mới (NEP, 1921) ở nước Nga có điểm tương đồng là", answers: ["xây dựng nền kinh tế nhiều thành phần có sự quản lý của nhà nước.", "xây dựng kinh tế thị trường xã hội chủ nghĩa, kiểm soát bằng pháp luật.", "ưu tiên phát triển công nghiệp nặng và giao thông vận tải.", "thay thế chế độ trưng thu lương thực thừa bằng thuế lương thực."], correct: 0 },
+  {question: "Sự kiện có tính đột phá làm xói mòn trật tự hai cực Ianta là",answers: ["cách mạng Cuba lật đổ được chế độ độc tài Batixta (1959).","ba nước Inđônêsia, Việt Nam, Lào tuyên bố độc lập (1945).","cách mạng dân tộc dân chủ Trung Quốc thành công (1949).","thắng lợi của cuộc kháng chiến chống Pháp ở Việt Nam (1954)."],correct: 2},
+  { question: "Trong thời kỳ 1954 - 1975, đâu là một trong những nguyên nhân trực tiếp làm cho Việt Nam trở thành nơi diễn ra “sự kiện có tầm quan trọng quốc tế to lớn và có tính thời đại sâu sắc”?", answers: ["Mỹ chuyển trọng tâm chiến lược toàn cầu sang Việt Nam.", "Hiệp định Giơnevơ chia cắt Việt Nam thành hai miền.", "Phe xã hội chủ nghĩa ủng hộ Việt Nam chống Mỹ.", "Việt Nam chịu sự chi phối của cục diện hai cực, hai phe."], correct: 0 },
+  { question: "Trong giai đoạn sau Chiến tranh lạnh, để xây dựng sức mạnh thực sự, các quốc gia trên thế giới đều tập trung vào", answers: ["ổn định chính trị.", "phát triển quốc phòng.", "hội nhập quốc tế.", "phát triển kinh tế."], correct: 3 },
+  { question: "Sự ra đời tổ chức Hiệp ước Bắc Đại Tây Dương (NATO, 1949) và tổ chức Hiệp ước Vácsava (1955) là hệ quả trực tiếp của", answers: ["cuộc Chiến tranh lạnh do Mỹ phát động.", "các cuộc chiến tranh cục bộ trên thế giới.", "xung đột vũ trang giữa Tây Âu và Đông Âu.", "chiến lược Ngăn đe thực tế của Mỹ."], correct: 0 },
+  { question: "Căn cứ địa cách mạng là nơi cần có những điều kiện thuận lợi, trong đó “nhân hòa” là yếu tố quan trọng nhất. Đâu là yếu tố “nhân hòa” để Nguyễn Ái Quốc chọn Cao Bằng làm nơi xây dựng căn cứ địa vào năm 1941?", answers: ["Sớm hình thành các Hội Cứu quốc.", "Có lực lượng du kích phát triển sớm.", "Mọi người đều tham gia Việt Minh.", "Có phong trào quần chúng tốt từ trước."], correct: 3 },
+  { question: "Một trong những yếu tố tác động đến sự hình thành trật tự thế giới giai đoạn sau Chiến tranh lạnh là", answers: ["tư bản tài chính xuất hiện và chi phối nền kinh tế thế giới.", "sự phát triển của các cường quốc và Liên minh châu Âu (EU).", "sự xuất hiện và ngày càng mở rộng của các công ty độc quyền.", "các trung tâm kinh tế - tài chính Tây Âu và Nhật Bản ra đời."], correct: 1 },
+  { question: "Nội dung nào dưới đây phản ánh đúng giá trị của chiến thắng Đường số 14 - Phước Long (tháng 1 - 1975) đối với việc củng cố quyết tâm và hoàn thành kế hoạch giải phóng miền Nam của Đảng Lao động Việt Nam?", answers: ["Trận nghi binh chiến lược.", "Trận trinh sát chiến lược.", "Trận tập kích chiến lược.", "Trận mở màn chiến lược."], correct: 1 },
+  { question: "Trong cuộc Tiến công chiến lược Đông - Xuân 1953 - 1954, quân đội và nhân dân Việt Nam thực hiện kế sách gì để đối phó với kế hoạch Nava?", answers: ["Lừa địch để đánh địch.", "Đánh điểm, diệt viện.", "Đánh vận động và công kiên.", "Điều địch để đánh địch."], correct: 3 },
+  { question: "Một trong những điểm chung của Cách mạng tháng Tám năm 1945 và hai cuộc kháng chiến chống đế quốc xâm lược (1945 - 1975) ở Việt Nam là có sự kết hợp", answers: ["đấu tranh đồng thời trên ba mặt trận: quân sự, chính trị và ngoại giao.", "hoạt động của bộ đội chủ lực, bộ đội địa phương và dân quân du kích.", "phong trào đấu tranh ở nông thôn với phong trào đấu tranh ở thành thị.", "tác chiến trên cả ba vùng rừng núi, nông thôn đồng bằng và đô thị."], correct: 2 },
+  { question: "Tính chất triệt để của phong trào cách mạng Việt Nam 1930 - 1931 được biểu hiện ở chỗ", answers: ["diễn ra trên quy mô rộng lớn chưa từng thấy.", "lần đầu tiên có sự lãnh đạo của một chính đảng.", "hình thức đấu tranh phong phú và quyết liệt.", "không ảo tưởng vào kẻ thù của dân tộc và giai cấp."], correct: 3 },
+  { question: "Trong hai cuộc kháng chiến chống đế quốc xâm lược (1945 - 1975), nhân dân Việt Nam đã giành thắng lợi bằng việc", answers: ["dùng sức mạnh của vật chất đánh thắng sức mạnh của ý chí và tinh thần.", "dùng sức mạnh của nhiều nhân tố thắng sức mạnh quân sự và kinh tế.", "lấy lực thắng thế, lấy ít thắng nhiều về quân số.", "lấy số lượng quân đông thắng vũ khí chất lượng cao."], correct: 1 },
+  { question: "Cách mạng tháng Tám năm 1945 ở Việt Nam là một cuộc cách mạng", answers: ["không mang tính cải lương.", "chỉ mang tính chất dân tộc.", "không mang tính bạo lực.", "có tính dân chủ điển hình."], correct: 0 }
+        ]
+      }
+    };
+
+
+    function shuffleArray(array) {
+      let arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const subjectParam = urlParams.get("subject") || "history";
+      const examParam = urlParams.get("exam");
+
+      let currentQuestions = [];
+      let subjectName = "Lịch Sử";
+      let examTitleDisplay = "";
+
+      if (examParam && fixedExams[examParam]) {
+        const fixedExam = fixedExams[examParam];
+        currentQuestions = fixedExam.questions;
+        subjectName = fixedExam.subjectName;
+        examTitleDisplay = fixedExam.title;
+      } else {
+        subjectName = subjectParam === "history" ? "Lịch Sử" : "Địa Lý";
+        examTitleDisplay = `BÀI THI TRẮC NGHIỆM MÔN ${subjectName.toUpperCase()} (40 CÂU)`;
+
+        const baseQuestions = subjectParam === "history" ? historyQuestions : geographyQuestions;
+        const customBank = JSON.parse(localStorage.getItem('customQuestionBank')) || [];
+        const filteredCustom = customBank.filter(q => q.subject === subjectParam);
+
+        let pool = [...filteredCustom, ...baseQuestions];
+        currentQuestions = shuffleArray(pool).slice(0, 40);
+      }
+
+      document.getElementById("welcomeSubjectTitle").textContent = `CHUẨN BỊ THI: ${examTitleDisplay}`;
+
+      document.getElementById("btnStartExam").addEventListener("click", function() {
+        document.getElementById("startScreen").style.display = "none";
+        document.getElementById("examContentWrapper").style.display = "block";
+
+        const titleEl = document.getElementById("subjectTitle");
+        if (titleEl) titleEl.textContent = examTitleDisplay;
+
+        const container = document.getElementById("questionsContainer");
+        const paletteContainer = document.getElementById("questionPalette");
+        if (container) {
+          container.innerHTML = "";
+          if (paletteContainer) paletteContainer.innerHTML = "";
+
+          currentQuestions.forEach((q, idx) => {
+            const qCard = document.createElement("div");
+            qCard.className = "card question-card";
+            qCard.id = `question_card_${idx}`;
+
+            let optionsHtml = "";
+            q.answers.forEach((ans, aIdx) => {
+              optionsHtml += `
+                <label class="option-item" style="display:block; margin: 8px 0; cursor:pointer;">
+                  <input type="radio" name="question_${idx}" value="${aIdx}" required>
+                  <span><strong>${String.fromCharCode(65 + aIdx)}.</strong> ${ans}</span>
+                </label>
+              `;
+            });
+
+            // Hiển thị tiêu đề câu hỏi đi kèm nút đánh dấu (Flag)
+            qCard.innerHTML = `
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div class="question-title" style="font-weight:bold;">Câu ${idx + 1}: ${q.question}</div>
+                <button type="button" id="btn_flag_${idx}" onclick="toggleFlagQuestion(${idx})" style="background:#fff; border:1px solid #ffc107; color:#d39e00; padding:4px 10px; border-radius:15px; cursor:pointer; font-weight:bold; font-size:0.85rem;">
+                  🚩 Đánh dấu
+                </button>
+              </div>
+              <div class="options-list">${optionsHtml}</div>
+            `;
+            container.appendChild(qCard);
+
+            // Vẽ các ô nút bấm trên bảng điều hướng (Palette)
+            if (paletteContainer) {
+              const pBtn = document.createElement("button");
+              pBtn.type = "button";
+              pBtn.className = "palette-btn";
+              pBtn.id = `palette_btn_${idx}`;
+              pBtn.textContent = idx + 1;
+              pBtn.onclick = function() {
+                document.getElementById(`question_card_${idx}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+              };
+              paletteContainer.appendChild(pBtn);
+            }
+          });
+        }
+
+        // Lắng nghe sự kiện chọn đáp án để tự động chuyển sang màu xanh lá trên Palette
+        const quizForm = document.getElementById("quizForm");
+        if (quizForm) {
+          quizForm.addEventListener("change", function(e) {
+            if (e.target.name && e.target.name.startsWith("question_")) {
+              const qIdx = e.target.name.split("_")[1];
+              updatePaletteStatus(qIdx);
+            }
+          });
+
+          quizForm.onsubmit = function (e) {
+            e.preventDefault();
+            clearInterval(timerInterval);
+            submitQuiz(currentQuestions, subjectName, totalSeconds);
+          };
+        }
+
+        let totalSeconds = 50 * 60;
+        const timeDisplay = document.getElementById("timeDisplay");
+
+        const timerInterval = setInterval(() => {
+          totalSeconds--;
+          if (timeDisplay) {
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            timeDisplay.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          }
+
+          if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            alert("Hết giờ làm bài! Hệ thống tự động nộp bài.");
+            submitQuiz(currentQuestions, subjectName, totalSeconds);
+          }
+        }, 1000);
+      });
+
+      function submitQuiz(questionsList, subName, remainingSeconds) {
+        let correctCount = 0;
+        const details = [];
+
+        questionsList.forEach((q, idx) => {
+          const selected = document.querySelector(`input[name="question_${idx}"]:checked`);
+          const userChoice = selected ? parseInt(selected.value) : -1;
+          const isCorrect = userChoice === q.correct;
+          if (isCorrect) correctCount++;
+
+          details.push({
+            question: q.question,
+            answers: q.answers,
+            correct: q.correct,
+            userChoice: userChoice,
+            isCorrect: isCorrect,
+            explanation: q.explanation || "Chưa có lời giải chi tiết cho câu này."
+          });
+        });
+
+        const score = ((correctCount / questionsList.length) * 10).toFixed(1);
+        const currentUser = JSON.parse(localStorage.getItem("currentUser")) || { fullname: "Thí sinh Tự do" };
+
+        const timeSpentSeconds = (50 * 60) - remainingSeconds;
+        const spentM = Math.floor(timeSpentSeconds / 60);
+        const spentS = timeSpentSeconds % 60;
+
+        const resultData = {
+          candidateName: currentUser.fullname,
+          subjectName: subName,
+          correctCount: correctCount,
+          totalQuestions: questionsList.length,
+          score: score,
+          timeSpent: `${spentM} phút ${spentS} giây`,
+          date: new Date().toLocaleString("vi-VN"),
+          details: details
+        };
+
+        localStorage.setItem("latestQuizResult", JSON.stringify(resultData));
+
+        const history = JSON.parse(localStorage.getItem("examHistory")) || [];
+        history.unshift(resultData);
+        localStorage.setItem("examHistory", JSON.stringify(history));
+
+        window.location.href = "result.html";
+      }
+    });
+  </script>
+</body>
+</html>

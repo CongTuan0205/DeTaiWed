@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kết Quả Bài Thi & Thống Kê Tiến Bộ</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <!-- [BỔ SUNG MỚI] Nhúng thư viện Chart.js để vẽ Biểu đồ Thống kê Điểm số -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .review-card { margin-top: 15px; padding: 15px; border-radius: 6px; border-left: 6px solid #ccc; background: var(--card-bg); }
+    .review-card.correct-card { border-left-color: #2e7d32; }
+    .review-card.wrong-card { border-left-color: #d9534f; }
+    .opt-review { padding: 8px 12px; margin: 5px 0; border-radius: 4px; border: 1px solid var(--border-color); }
+    .opt-correct { background-color: #d4edda; color: #155724; font-weight: bold; border-color: #c3e6cb; }
+    .opt-wrong { background-color: #f8d7da; color: #721c24; text-decoration: line-through; border-color: #f5c6cb; }
+    
+    table.history-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table.history-table th, table.history-table td { padding: 12px; border: 1px solid var(--border-color); text-align: center; }
+    table.history-table th { background: var(--primary-color); color: white; }
+
+    /* [BỔ SUNG MỚI] Styling cho phần Lời giải chi tiết */
+    .explanation-box {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #e8f4f8;
+      border-radius: 5px;
+      border-left: 4px solid #0288d1;
+      font-size: 0.95rem;
+      color: #01579b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-banner">
+    <div class="top-banner-content">
+      <div class="logo-container">
+        <span class="logo-icon">🏛️</span>
+        <div class="logo-text">CỔNG THI TRẮC NGHIỆM LỊCH SỬ & ĐỊA LÝ</div>
+      </div>
+      <div class="header-tools">
+        <span id="clock"></span>
+        <button class="theme-btn" id="themeToggle">🌓 Giao diện</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><a href="exam-list.html">Danh sách đề thi</a></li>
+        <li><a href="exam.html">Làm bài thi</a></li>
+        <li><a href="result.html" class="active">Kết quả</a></li>
+        <li><a href="feedback.html">Góp ý</a></li>
+        <li><a href="login.html">Tài khoản</a></li>
+        <li><a href="admin.html">Quản lý câu hỏi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card" style="text-align: center;">
+      <h2 id="resultSubjectTitle">KẾT QUẢ BÀI THI VỪA HOÀN THÀNH</h2>
+      <div id="resultContent" style="margin: 20px 0; font-size: 1.1rem;"></div>
+      
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        <button id="toggleReviewBtn" class="btn-submit" style="width: auto; background-color: #2e7d32; padding: 10px 20px;">🔍 Xem Chi Tiết Đáp Án</button>
+        <!-- [BỔ SUNG MỚI] Nút Xuất PDF / In kết quả thi -->
+        <button onclick="window.print()" class="btn-submit" style="width: auto; background-color: #0288d1; padding: 10px 20px;">🖨️ In / Xuất PDF Kết Quả</button>
+        <a href="exam-list.html" class="btn-submit" style="width: auto; text-decoration: none; display: inline-block; padding: 10px 20px;">Thi Bài Khác</a>
+      </div>
+    </div>
+
+    <!-- KHU VỰC XEM LẠI ĐÁP ÁN CHI TIẾT + LỜI GIẢI -->
+    <div id="reviewContainer" style="display: none; margin-top: 25px;">
+      <h3 style="margin-bottom: 15px;">Chi Tiết Bài Làm & Lời Giải:</h3>
+      <div id="reviewList"></div>
+    </div>
+
+    <!-- [BỔ SUNG MỚI] BIỂU ĐỒ THỐNG KÊ ĐIỂM SỐ & TIẾN BỘ (ANALYTICS DASHBOARD) -->
+    <div class="card" style="margin-top: 30px;">
+      <h3>📊 BIỂU ĐỒ THỐNG KÊ ĐIỂM SỐ & PHONG ĐỘ LÀM BÀI</h3>
+      <p style="color: #666; margin-bottom: 15px;">Thống kê tiến bộ qua các lần làm bài gần nhất của bạn:</p>
+      <div style="max-height: 350px; position: relative;">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+
+    <!-- BẢNG LỊCH SỬ TẤT CẢ LẦN THI -->
+    <div class="card" style="margin-top: 30px;">
+      <h3>📜 BẢNG LỊCH SỬ LÀM BÀI TẤT CẢ CÁC LẦN THI</h3>
+      <div style="overflow-x: auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Thí Sinh</th>
+              <th>Môn Thi</th>
+              <th>Điểm Số</th>
+              <th>Số Câu Đúng</th>
+              <th>Thời Gian Làm</th>
+              <th>Ngày Giờ Nộp</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="6">Chưa có lịch sử thi nào.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Hệ Thống Thi Trắc Nghiệm Lịch Sử & Địa Lý Online.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    const res = JSON.parse(localStorage.getItem('latestQuizResult'));
+    const resultContent = document.getElementById('resultContent');
+    const toggleReviewBtn = document.getElementById('toggleReviewBtn');
+    const reviewContainer = document.getElementById('reviewContainer');
+    const reviewList = document.getElementById('reviewList');
+
+    if (res) {
+      document.getElementById('resultSubjectTitle').textContent = `KẾT QUẢ BÀI THI MÔN ${res.subjectName.toUpperCase()}`;
+      
+      resultContent.innerHTML = `
+        <p><strong>Thí sinh:</strong> <span style="color:var(--primary-color); font-weight:bold;">${res.candidateName}</span></p>
+        <p><strong>Thời gian nộp bài:</strong> ${res.date}</p>
+        <p><strong>Thời gian làm bài:</strong> ${res.timeSpent}</p>
+        <p><strong>Số câu trả lời đúng:</strong> ${res.correctCount} / ${res.totalQuestions} câu</p>
+        <p style="font-size: 2.2rem; color: var(--primary-color); font-weight: bold; margin-top: 10px;">
+          ${res.score} / 10 Điểm
+        </p>
+      `;
+
+      if (res.details && res.details.length > 0) {
+        reviewList.innerHTML = '';
+        res.details.forEach((item, idx) => {
+          const card = document.createElement('div');
+          card.className = `review-card ${item.isCorrect ? 'correct-card' : 'wrong-card'}`;
+          
+          let optionsHtml = '';
+          item.answers.forEach((opt, optIdx) => {
+            let optClass = 'opt-review';
+            let label = '';
+            if (optIdx === item.correct) { optClass += ' opt-correct'; label = ' ✔️ (Đáp án đúng)'; }
+            if (optIdx === item.userChoice && !item.isCorrect) { optClass += ' opt-wrong'; label = ' ❌ (Bạn chọn sai)'; }
+            optionsHtml += `<div class="${optClass}"><strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt} ${label}</div>`;
+          });
+
+          // [BỔ SUNG MỚI] Hiển thị phần Lời giải chi tiết
+          let expHtml = item.explanation ? `<div class="explanation-box"><strong>💡 Lời giải chi tiết:</strong> ${item.explanation}</div>` : '';
+
+          card.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 8px;">
+              Câu ${idx + 1}: ${item.question} 
+              <span style="color: ${item.isCorrect ? '#2e7d32' : '#d9534f'}">[${item.isCorrect ? 'ĐÚNG' : 'SAI'}]</span>
+            </div>
+            <div>${optionsHtml}</div>
+            ${expHtml}
+          `;
+          reviewList.appendChild(card);
+        });
+      }
+
+      toggleReviewBtn.addEventListener('click', () => {
+        const isHidden = reviewContainer.style.display === 'none';
+        reviewContainer.style.display = isHidden ? 'block' : 'none';
+        toggleReviewBtn.textContent = isHidden ? '🙈 Ẩn Chi Tiết Đáp Án' : '🔍 Xem Chi Tiết Đáp Án';
+      });
+    } else {
+      resultContent.innerHTML = '<p>Chưa có thông tin kết quả bài thi vừa hoàn thành.</p>';
+      toggleReviewBtn.style.display = 'none';
+    }
+
+    // HIỂN THỊ BẢNG LỊCH SỬ THI & VẼ BIỂU ĐỒ PROGRESS CHART
+    const historyData = JSON.parse(localStorage.getItem('examHistory')) || [];
+    const tbody = document.getElementById('historyTableBody');
+    if (historyData.length > 0) {
+      tbody.innerHTML = '';
+      historyData.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${item.candidateName}</strong></td>
+          <td>${item.subjectName}</td>
+          <td><strong style="color:var(--accent-color);">${item.score}</strong></td>
+          <td>${item.correctCount}/${item.totalQuestions}</td>
+          <td>${item.timeSpent}</td>
+          <td>${item.date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // [BỔ SUNG MỚI] Logic khởi tạo Biểu đồ tiến bộ (Chart.js)
+      renderAnalyticsChart(historyData);
+    }
+
+    function renderAnalyticsChart(data) {
+      const ctx = document.getElementById('progressChart').getContext('2d');
+      const recentData = [...data].reverse().slice(-10); // Lấy tối đa 10 lần thi gần nhất
+
+      const labels = recentData.map((item, idx) => `Lần ${idx + 1} (${item.subjectName})`);
+      const scores = recentData.map(item => parseFloat(item.score));
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Điểm số bài thi (thang điểm 10)',
+            data: scores,
+            borderColor: '#003366',
+            backgroundColor: 'rgba(0, 51, 102, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 6,
+            pointBackgroundColor: '#2e7d32'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 10, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

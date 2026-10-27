@@ -1,0 +1,155 @@
+@media (max-width: 992px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .top-banner-content {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .slider-container {
+    height: 140px;
+  }
+
+  .slide.active {
+    font-size: 1.1rem;
+  }
+
+  .quiz-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+/* css/responsive.css - Giao diện tối ưu cho điện thoại di động và máy tính bảng */
+
+/* Thiết bị di động có chiều ngang từ 768px trở xuống */
+@media screen and (max-width: 768px) {
+  /* Bố cục chung */
+  body {
+    font-size: 14px;
+  }
+
+  .container {
+    width: 95% !important;
+    padding: 10px !important;
+    margin: 10px auto !important;
+  }
+
+  /* Top Banner & Header */
+  .top-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .logo-container {
+    justify-content: center;
+  }
+
+  .header-tools {
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Menu điều hướng ngang chuyển thành dạng danh sách thu gọn */
+  header nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+    gap: 4px;
+  }
+
+  header nav ul li {
+    margin: 2px;
+  }
+
+  header nav ul li a {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  /* Chuyển các lưới 2 hoặc 3 cột thành 1 cột dọc */
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+
+  /* Khung đăng nhập / đăng ký */
+  .auth-container {
+    max-width: 100%;
+    margin: 15px 10px;
+    padding: 20px 15px;
+  }
+
+  .auth-tabs {
+    gap: 8px;
+  }
+
+  .auth-tab-btn {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  /* Ô nhập liệu và form (Tránh bị phóng to tự động trên iOS khi focus) */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px !important;
+    padding: 10px !important;
+  }
+
+  /* Nút bấm to hơn để dễ chạm bằng ngón tay */
+  button, .btn-submit, .btn-auth-submit {
+    padding: 12px !important;
+    font-size: 1rem !important;
+  }
+
+  /* Bảng lịch sử và quản lý */
+  .history-table th, .history-table td {
+    padding: 8px 6px !important;
+    font-size: 0.8rem;
+  }
+
+  /* Slider trang chủ */
+  .slider-container {
+    height: 140px;
+  }
+
+  .slide h2 {
+    font-size: 1.1rem;
+    padding: 0 10px;
+  }
+}
+
+/* Thiết bị màn hình rất nhỏ (dưới 480px) */
+@media screen and (max-width: 480px) {
+  .logo-text {
+    font-size: 0.85rem;
+  }
+
+  header nav ul li a {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .timer-box {
+    font-size: 0.85rem;
+  }
+}

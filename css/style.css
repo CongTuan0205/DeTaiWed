@@ -1,0 +1,565 @@
+/* RESET & VARIABLE SETUP */
+:root {
+  --primary-color: #003366;
+  --secondary-color: #2e7d32;
+  --accent-color: #d9534f;
+  --bg-color: #f4f6f9;
+  --text-color: #333333;
+  --card-bg: #ffffff;
+  --border-color: #cccccc;
+}
+
+body.dark-mode {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --border-color: #444444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* BANNER TRÊN CÙNG */
+.top-banner {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 1.6rem;
+}
+
+.logo-text {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#clock {
+  font-size: 0.9rem;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.theme-btn {
+  background: #fff;
+  color: var(--primary-color);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* THANH MENU DƯỚI BANNER */
+header {
+  background-color: #002244;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+nav ul {
+  display: flex;
+  list-style: none;
+  gap: 10px;
+}
+
+nav a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 12px 18px;
+  transition: background 0.2s;
+}
+
+nav a:hover, nav a.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* HERO SLIDER (THU NHỎ 180PX) */
+.slider-container {
+  position: relative;
+  max-width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background-color: #222;
+}
+
+.slide {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+.slide.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+}
+
+.slide-1 { background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), #004080; }
+.slide-2 { background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), #2e7d32; }
+.slide-3 { background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), #8e24aa; }
+
+/* CONTAINER & GRIDS */
+.container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* CẤU TRÚC THI TRẮC NGHIỆM */
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.timer-box {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  background: rgba(217, 83, 79, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--accent-color);
+}
+
+.question-card {
+  margin-bottom: 20px;
+}
+
+.question-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.options-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.option-item:hover {
+  background-color: rgba(0, 51, 102, 0.05);
+}
+
+.option-item input[type="radio"] {
+  cursor: pointer;
+}
+
+/* FORM STYLING */
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.radio-group, .checkbox-group {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  min-height: 18px;
+}
+
+button.btn-submit {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+}
+
+button.btn-submit:hover {
+  opacity: 0.9;
+}
+
+/* BIỂU ĐỒ KẾT QUẢ BẰNG CSS THUẦN (CỘT HỌC TẬP) */
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  height: 150px;
+  margin-top: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.chart-bar {
+  flex: 1;
+  background-color: var(--primary-color);
+  color: white;
+  text-align: center;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s ease;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+  font-weight: bold;
+}
+
+/* FOOTER */
+footer {
+  background-color: var(--primary-color);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+}
+
+/* feedback form */
+.feedback-form-card { margin-bottom: 30px; }
+.comment-item {
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--card-bg, #fff);
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--border-color, #eee);
+  padding-bottom: 6px;
+}
+.comment-author { font-weight: bold; color: #0b6623; }
+.comment-time { font-size: 0.85rem; color: #002244; }
+.comment-text { line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
+
+/* Khu vực tương tác (Thả icon & Phản hồi) */
+.comment-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  font-size: 0.9rem;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+}
+.reaction-bar {
+  display: flex;
+  gap: 6px;
+}
+.reaction-btn {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.reaction-btn:hover { background: #e9ecef; }
+.reply-toggle-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+.reply-toggle-btn:hover { text-decoration: underline; }
+
+/* Khung danh sách phản hồi (Replies) */
+.replies-container {
+  margin-top: 10px;
+  padding-left: 20px;
+  border-left: 3px solid #0b6623;
+}
+.reply-item {
+  background: rgba(0,0,0,0.02);
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 0.95rem;
+}
+.reply-form {
+  margin-top: 10px;
+  display: none;
+  gap: 8px;
+}
+.reply-form input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.reply-form button {
+  padding: 6px 12px;
+  background: #0b6623;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.empty-comment { text-align: center; padding: 30px; color: #777; font-style: italic; }
+
+/* --- BỔ SUNG GIAO DIỆN BẢNG ĐIỀU HƯỚNG CÂU HỎI (QUESTION PALETTE) --- */
+.exam-layout {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .exam-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.palette-box {
+  position: sticky;
+  top: 80px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.palette-btn {
+  aspect-ratio: 1;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #f8f9fa;
+  color: #333;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.palette-btn.answered {
+  background: #28a745 !important;
+  color: white !important;
+  border-color: #28a745 !important;
+}
+
+/* [BỔ SUNG MỚI] Trạng thái Đang phân vân (Flag) -> Màu vàng */
+.palette-btn.flagged {
+  background: #ffc107 !important;
+  color: #000 !important;
+  border-color: #d39e00 !important;
+}
+
+/* --- TỐI ƯU GIAO DIỆN KHI IN / XUẤT PDF KẾT QUẢ --- */
+@media print {
+  header, .top-banner, footer, #toggleReviewBtn, a.btn-submit, button.btn-submit {
+    display: none !important;
+  }
+}
+
+/* --- BỔ SUNG: ẨN MỤC QUẢN LÝ CÂU HỎI MẶC ĐỊNH CHO ĐẾN KHI ĐĂNG NHẬP ADMIN --- */
+nav ul li a[href="admin.html"] {
+  display: none;
+}
+
+nav ul li.show-admin-menu a[href="admin.html"] {
+  display: block;
+}
+
+/* CSS Riêng cho modal/form đăng nhập - đăng ký theo mẫu */
+.auth-container {
+  max-width: 480px;
+  margin: 40px auto;
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  padding: 30px;
+  position: relative;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid #0b6623;
+  background: transparent;
+  color: #0b6623;
+  transition: all 0.3s ease;
+}
+
+.auth-tab-btn.active {
+  background: #0b6623;
+  color: #fff;
+}
+
+.auth-form {
+  display: none;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+.form-group-custom {
+  margin-bottom: 18px;
+}
+
+.form-group-custom label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.form-group-custom input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group-custom input:focus {
+  border-color: #0b6623;
+}
+
+.btn-auth-submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #0b6623;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.btn-auth-submit:hover {
+  background-color: #094e1b;
+}
